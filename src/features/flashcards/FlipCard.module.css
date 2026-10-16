@@ -1,0 +1,153 @@
+.scene {
+  perspective: 1600px;
+  width: 100%;
+}
+.card {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+  height: clamp(300px, 52dvh, 480px);
+  transform-style: preserve-3d;
+  transition: transform 420ms var(--ease);
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  outline: none;
+}
+.card:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.flipped {
+  transform: rotateX(180deg);
+}
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 28px 28px;
+  overflow: auto;
+}
+.back {
+  transform: rotateX(180deg);
+  background: color-mix(in srgb, var(--primary-soft) 35%, var(--surface));
+}
+.actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+  z-index: 2;
+}
+.faceContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-height: 100%;
+}
+.faceContent img {
+  max-height: 180px;
+}
+.sideLabel {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+}
+.text {
+  margin: 0;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.xl {
+  font-size: clamp(1.8rem, 4vw + 0.6rem, 2.6rem);
+  font-weight: 600;
+}
+.lg {
+  font-size: clamp(1.4rem, 2.6vw + 0.6rem, 2rem);
+}
+.md {
+  font-size: clamp(1.1rem, 1.4vw + 0.7rem, 1.45rem);
+}
+.sm {
+  font-size: 1.05rem;
+  text-align: left;
+}
+.xs {
+  font-size: 0.95rem;
+  text-align: left;
+}
+.enter-left {
+  animation: from-left 260ms var(--ease);
+}
+.enter-right {
+  animation: from-right 260ms var(--ease);
+}
+@keyframes from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+@keyframes from-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+/* Reduced motion: cross-fade instead of the 3D flip. */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transform: none !important;
+  }
+  .face {
+    transition: opacity 120ms;
+  }
+  .back {
+    transform: none;
+    opacity: 0;
+  }
+  .flipped .back {
+    opacity: 1;
+  }
+  .flipped .front {
+    opacity: 0;
+  }
+}
+:global(:root[data-reduced-motion='true']) .card {
+  transform: none !important;
+}
+:global(:root[data-reduced-motion='true']) .back {
+  transform: none;
+  opacity: 0;
+}
+:global(:root[data-reduced-motion='true']) .flipped .back {
+  opacity: 1;
+}
+:global(:root[data-reduced-motion='true']) .flipped .front {
+  opacity: 0;
+}
+.compact .card {
+  height: clamp(220px, 34dvh, 320px);
+  min-height: 220px;
+}
+.card:not(.flipped) .back,
+.flipped .front {
+  pointer-events: none;
+}

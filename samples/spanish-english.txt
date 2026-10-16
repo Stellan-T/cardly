@@ -1,0 +1,20 @@
+el perro	the dog
+el gato	the cat
+la casa	the house
+el libro	the book
+la manzana	the apple
+el agua	the water
+comer	to eat
+beber	to drink
+hablar	to speak
+vivir	to live
+escribir	to write
+leer	to read
+la ciudad	the city
+el árbol	the tree
+la mañana	the morning; tomorrow
+el niño	the boy, the child
+feliz	happy
+triste	sad
+grande	big, large
+pequeño	small

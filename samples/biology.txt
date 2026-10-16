@@ -1,0 +1,34 @@
+# Biology: cells and energy
+
+Photosynthesis: process by which plants make glucose using light
+Cellular respiration: process that releases energy from glucose, producing ATP, water and carbon dioxide
+Mitochondria: organelle where cellular respiration takes place; the "powerhouse" of the cell
+Chloroplast: organelle in plant cells where photosynthesis takes place
+Nucleus: membrane-bound organelle that contains the cell's DNA
+Ribosome: structure that builds proteins from amino acids
+Cell membrane: thin, flexible barrier that controls what enters and leaves the cell
+Cell wall: rigid outer layer of plant, fungal and bacterial cells
+Cytoplasm: jelly-like fluid that fills the cell and holds the organelles
+Vacuole: sac that stores water, food and waste
+Endoplasmic reticulum: network of membranes that transports proteins and lipids
+Golgi apparatus: organelle that modifies, sorts and packages proteins
+Lysosome: organelle containing enzymes that break down waste
+ATP: adenosine triphosphate, the main energy carrier of the cell
+Enzyme: protein that speeds up a chemical reaction
+Diffusion: movement of particles from high to low concentration
+Osmosis: diffusion of water across a selectively permeable membrane
+Active transport: movement of substances against a concentration gradient, using energy
+Mitosis: cell division that produces two identical daughter cells
+Meiosis: cell division that produces four gametes with half the chromosome number
+Chromosome: thread-like structure of DNA and protein that carries genes
+Gene: section of DNA that codes for a protein
+DNA: deoxyribonucleic acid, the molecule that carries genetic information
+RNA: ribonucleic acid, which helps turn genetic information into proteins
+Prokaryote: single-celled organism without a nucleus
+Eukaryote: organism whose cells have a nucleus
+Chlorophyll: green pigment that absorbs light for photosynthesis
+Glucose: simple sugar made in photosynthesis (C6H12O6)
+Homeostasis: keeping a stable internal environment
+Stomata: small openings in leaves that let gases in and out
+Fermentation: releasing energy from glucose without oxygen
+Organelle: specialised structure inside a cell with a specific job

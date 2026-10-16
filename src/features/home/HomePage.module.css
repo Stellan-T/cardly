@@ -1,0 +1,47 @@
+.hello {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.hello h1 {
+  margin: 0;
+}
+.streak {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.streak > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.streak .subtle {
+  color: inherit;
+  opacity: 0.85;
+}
+.onboarding {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+.onboarding .panel {
+  padding: 24px;
+}
+@media (max-width: 800px) {
+  .onboarding {
+    grid-template-columns: 1fr;
+  }
+}
+.dueList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 10px;
+}

@@ -1,0 +1,159 @@
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.metaRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .metaRow {
+    grid-template-columns: 1fr;
+  }
+}
+.cards {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.row {
+  position: relative;
+  padding: 10px 14px 16px;
+}
+.dragging {
+  z-index: 10;
+  box-shadow: var(--shadow-3);
+  opacity: 0.95;
+}
+.rowHead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.rowNum {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.handle {
+  cursor: grab;
+  touch-action: none;
+}
+.rowFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 84px;
+  gap: 16px;
+  align-items: start;
+}
+.rowFields textarea {
+  min-height: 44px;
+  resize: none;
+  overflow: hidden;
+  border-width: 0 0 2px;
+  border-radius: 0;
+  padding: 8px 2px;
+  background: transparent;
+}
+.rowFields textarea:focus {
+  box-shadow: none;
+  border-color: var(--primary);
+}
+.fieldLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+}
+.imageCell {
+  display: flex;
+  justify-content: center;
+}
+.imageBtn {
+  width: 84px;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+}
+.imageBtn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.thumb {
+  position: relative;
+}
+.thumb button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+.thumbImg {
+  width: 84px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+  .rowFields {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .imageCell {
+    justify-content: flex-start;
+  }
+}
+.insert {
+  position: absolute;
+  left: 50%;
+  bottom: -15px;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity var(--dur);
+  z-index: 2;
+}
+.row:hover .insert,
+.insert:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .insert {
+    opacity: 0.8;
+  }
+}
+.addCard {
+  margin-top: 20px;
+  border-style: dashed;
+  border-radius: var(--radius);
+}

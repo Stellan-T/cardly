@@ -1,0 +1,142 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.headerText {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.headerText h1 {
+  overflow-wrap: anywhere;
+  margin-bottom: 6px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: calc(var(--topbar-h) + 16px);
+}
+@media (max-width: 960px) {
+  .side {
+    position: static;
+  }
+}
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 10px;
+  margin: 0;
+}
+.stats dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stats dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.terms {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.term {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 14px 16px;
+}
+.termSide {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  padding-right: 12px;
+  border-right: 1px solid var(--border);
+}
+.termDef {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.termImg {
+  max-width: 160px;
+  max-height: 110px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  align-self: flex-start;
+}
+.termActions {
+  display: flex;
+  gap: 0;
+}
+.termEdit {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+.termEdit > .row {
+  grid-column: 1 / -1;
+}
+@media (max-width: 640px) {
+  .term {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .termSide {
+    border-right: 0;
+    padding-right: 0;
+  }
+  .termActions {
+    justify-content: flex-end;
+  }
+  .termEdit {
+    grid-template-columns: 1fr;
+  }
+}
+.history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}

@@ -1,0 +1,155 @@
+rules_version = '2';
+
+// Cardly security rules.
+//  - users/{uid}/**            only the signed-in owner can read or write
+//  - publicSets/{setId}        any signed-in user (guests too) can read;
+//                              only the owner can create/update/delete
+//  - leaderboards/{setId}/match/{uid}
+//                              any signed-in user can read; users write only
+//                              their own entry, with a positive bestTimeMs
+//  - everything else is denied
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function str(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    function optStr(data, field, max) {
+      return !(field in data) || data[field] == null || str(data[field], max);
+    }
+
+    function validUser(d) {
+      return str(d.displayName, 100)
+        && optStr(d, 'email', 320)
+        && optStr(d, 'photoURL', 2048)
+        && (!('settings' in d) || d.settings is map)
+        && (!('streak' in d) || d.streak is map);
+    }
+
+    function validSet(d, uid) {
+      return d.ownerUid == uid
+        && str(d.title, 255) && d.title.size() > 0
+        && str(d.description, 2000)
+        && str(d.ownerName, 100)
+        && str(d.termLang, 20)
+        && str(d.defLang, 20)
+        && d.visibility in ['private', 'link']
+        && d.cardCount is int && d.cardCount >= 0
+        && d.draft is bool
+        && (!('folderIds' in d) || d.folderIds is list)
+        && (!('srsDue' in d) || d.srsDue is list)
+        && (!('summary' in d) || d.summary is map);
+    }
+
+    function validCard(d) {
+      return str(d.term, 1000)
+        && str(d.definition, 10000)
+        && d.order is number
+        && d.starred is bool
+        && optStr(d, 'imageId', 64)
+        && optStr(d, 'imageUrl', 2048)
+        && (!('tags' in d) || (d.tags is list && d.tags.size() <= 20));
+    }
+
+    function validFolder(d) {
+      return str(d.name, 255) && d.setIds is list && d.setIds.size() <= 1000;
+    }
+
+    function validTest(d) {
+      return str(d.setId, 64)
+        && d.scorePct is number && d.scorePct >= 0 && d.scorePct <= 100
+        && d.correct is number && d.total is number
+        && d.durationMs is number && d.takenAt is number;
+    }
+
+    function validImage(d) {
+      // ~150 KB compressed image as a base64 data URL.
+      return str(d.dataUrl, 400000) && d.dataUrl.matches('^data:image/.*') && d.bytes is number;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isUser(uid);
+      allow create, update: if isUser(uid) && validUser(request.resource.data);
+
+      match /sets/{setId} {
+        allow read, delete: if isUser(uid);
+        allow create, update: if isUser(uid) && validSet(request.resource.data, uid);
+
+        match /cards/{cardId} {
+          allow read, delete: if isUser(uid);
+          allow create, update: if isUser(uid) && validCard(request.resource.data);
+        }
+      }
+
+      match /folders/{folderId} {
+        allow read, delete: if isUser(uid);
+        allow create, update: if isUser(uid) && validFolder(request.resource.data);
+      }
+
+      match /tests/{testId} {
+        allow read, delete: if isUser(uid);
+        allow create, update: if isUser(uid) && validTest(request.resource.data);
+      }
+
+      match /images/{imageId} {
+        allow read, delete: if isUser(uid);
+        allow create, update: if isUser(uid) && validImage(request.resource.data);
+      }
+
+      match /progress/{setId} {
+        allow read, write: if isUser(uid);
+      }
+
+      match /sessions/{setId} {
+        allow read, write: if isUser(uid);
+      }
+    }
+
+    match /publicSets/{setId} {
+      function validPublic(d) {
+        return d.ownerUid == request.auth.uid
+          && str(d.title, 255)
+          && str(d.description, 2000)
+          && str(d.ownerName, 100)
+          && d.cards is list && d.cards.size() <= 5000
+          && d.cardCount is int;
+      }
+      // Only someone who owns a set with this id can publish it.
+      function ownsSourceSet() {
+        return exists(/databases/$(database)/documents/users/$(request.auth.uid)/sets/$(setId));
+      }
+
+      allow read: if signedIn();
+      allow create: if signedIn() && validPublic(request.resource.data) && ownsSourceSet();
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && validPublic(request.resource.data);
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      match /images/{imageId} {
+        allow read: if signedIn();
+        allow write: if signedIn()
+          && get(/databases/$(database)/documents/publicSets/$(setId)).data.ownerUid == request.auth.uid;
+      }
+    }
+
+    match /leaderboards/{setId}/match/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isUser(uid)
+        && request.resource.data.bestTimeMs is number
+        && request.resource.data.bestTimeMs > 0
+        && str(request.resource.data.displayName, 60)
+        && request.resource.data.achievedAt is number;
+      allow delete: if isUser(uid);
+    }
+  }
+}

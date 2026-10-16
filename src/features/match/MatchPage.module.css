@@ -1,0 +1,388 @@
+/* ==========================================================================
+   Start / results screens
+   ========================================================================== */
+.screen {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 28px 20px;
+}
+.intro h1,
+.intro p {
+  margin: 0;
+}
+.heading {
+  font-size: 1.5rem;
+}
+.introIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+}
+.best {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.best svg {
+  color: var(--accent);
+}
+.introHint {
+  text-align: left;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Countdown
+   ========================================================================== */
+.countdown {
+  display: grid;
+  place-items: center;
+  min-height: min(60dvh, 420px);
+}
+.count {
+  font-size: clamp(4.5rem, 24vw, 8rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  animation: count-pop 600ms var(--ease);
+}
+@keyframes count-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* ==========================================================================
+   Header clock
+   ========================================================================== */
+.clockWrap {
+  position: relative;
+  display: inline-flex;
+}
+.clock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 5.5em;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.clock svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.unit {
+  margin-left: 1px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.penalty {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-2);
+  animation: penalty-in 260ms var(--ease);
+}
+@keyframes penalty-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.8);
+  }
+}
+
+/* ==========================================================================
+   Board
+   ========================================================================== */
+.play {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.board {
+  /* Four rows of three tiles on phones: fit the screen without scrolling. */
+  --tile-h: clamp(76px, calc((100dvh - 190px) / 4), 150px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (min-width: 640px) {
+  .board {
+    /* Three rows of four. */
+    --tile-h: clamp(96px, calc((100dvh - 210px) / 3), 190px);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+.tile {
+  display: flex;
+  min-width: 0;
+  height: var(--tile-h);
+  padding: 8px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform 100ms var(--ease);
+}
+/* Text that doesn't fit even at the smallest size: let the tile grow rather than clip it. */
+.tile[data-overflow='true'] {
+  height: auto;
+  min-height: var(--tile-h);
+}
+@media (hover: hover) {
+  .tile:hover:not(:disabled) {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-2);
+  }
+}
+.tile:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.tile:focus-visible {
+  border-radius: var(--radius);
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+.tile[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+  /* A thicker ring, so the selection doesn't rely on colour alone. */
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.tile[aria-pressed='true']:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--primary),
+    var(--focus-ring);
+}
+.answer {
+  font-weight: 700;
+}
+.prompt {
+  font-weight: 500;
+  background: var(--surface-2);
+}
+.wrong {
+  animation: tile-shake 360ms var(--ease);
+}
+@keyframes tile-shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.cleared {
+  pointer-events: none;
+  animation: tile-out 380ms var(--ease) forwards;
+}
+@keyframes tile-out {
+  35% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+    visibility: hidden;
+  }
+}
+.tileInner {
+  margin: auto 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: normal;
+}
+/* Set by useFitText when even the smallest font can't fit whole words. */
+[data-overflow='true'] .tileInner {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.tileImage {
+  display: block;
+  width: 100%;
+  height: calc(var(--tile-h) * 0.48);
+  object-fit: contain;
+  border-radius: calc(var(--radius) - 6px);
+}
+.tileImage:only-child {
+  height: calc(var(--tile-h) - 24px);
+}
+.tileText {
+  white-space: pre-line;
+}
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Results
+   ========================================================================== */
+.summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px 18px;
+}
+.summary h2,
+.summary p {
+  margin: 0;
+}
+.record {
+  color: var(--accent);
+}
+.bigTime {
+  font-size: clamp(2.6rem, 12vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.bigTime .unit {
+  font-size: 0.5em;
+}
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.leaderboard h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+.leaderboard h2 svg {
+  color: var(--accent);
+}
+.lbTable {
+  table-layout: fixed;
+}
+.lbTable th,
+.lbTable td {
+  padding: 8px 6px;
+  vertical-align: middle;
+}
+.colRank {
+  width: 2.4em;
+}
+.colTime {
+  width: 4.6em;
+}
+.colWhen {
+  width: 7.2em;
+}
+.rank {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.lbName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.lbName > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.lbTable .lbTime {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.lbWhen {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mine .lbName {
+  font-weight: 700;
+}
+.current td {
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+}
+@media (max-width: 360px) {
+  .colWhen,
+  .lbWhen {
+    display: none;
+  }
+}

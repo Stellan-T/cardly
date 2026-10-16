@@ -1,0 +1,234 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Play area: canvas scene with HTML overlays on top. */
+.stage {
+  position: relative;
+  width: 100%;
+  height: clamp(340px, calc(100dvh - 220px), 680px);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #040714;
+  box-shadow: var(--shadow-2);
+  isolation: isolate;
+}
+.stage:focus,
+.stage:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-2);
+}
+.canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Prompt bar at the bottom of the scene. */
+.bar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  height: clamp(72px, 23%, 128px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow-3);
+}
+.bar[data-hidden] {
+  visibility: hidden;
+}
+.bar > :global(.btn) {
+  flex-shrink: 0;
+}
+.prompt {
+  flex: 1;
+  min-width: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.promptInner {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  padding: 2px 4px;
+}
+.promptLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.promptText {
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.promptL {
+  font-size: clamp(1.15rem, 0.9rem + 1.2vw, 1.6rem);
+}
+.promptM {
+  font-size: clamp(1rem, 0.85rem + 0.7vw, 1.3rem);
+}
+.promptS {
+  font-size: clamp(0.9rem, 0.8rem + 0.4vw, 1.05rem);
+}
+.promptXS {
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+/* Start / paused / game-over cards over the scene. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgb(4 7 20 / 55%);
+}
+.card {
+  width: min(440px, 100%);
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--shadow-3);
+}
+.card h2,
+.card p {
+  margin: 0;
+}
+.cardIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+}
+.best {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.best svg {
+  color: var(--star);
+}
+.badges {
+  justify-content: center;
+  --gap: 6px;
+}
+.bigScore {
+  font-size: clamp(2.4rem, 6vw + 1rem, 3.4rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+.actions {
+  justify-content: center;
+}
+
+/* Score + time in the study header. */
+.hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hudItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hudLow {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  border-color: transparent;
+}
+@media (max-width: 400px) {
+  .hud {
+    gap: 4px;
+  }
+  .hudItem {
+    padding: 3px 7px;
+    font-size: 0.86rem;
+  }
+  .hudItem svg {
+    display: none;
+  }
+}
+
+/* Accessible answer buttons below the scene. */
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.choicesLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+.choices .choice {
+  max-width: 100%;
+  min-height: 36px;
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+}
+.choice kbd {
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+.choiceText {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.choices .choice[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+.choices .inactive {
+  opacity: 0.6;
+}
+.wrong .choiceText {
+  text-decoration: line-through;
+}
