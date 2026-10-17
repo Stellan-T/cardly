@@ -179,6 +179,39 @@
   font-weight: 700;
   color: var(--danger-text);
 }
+.feedbackHeadGood {
+  color: var(--success-text);
+}
+/* A correct answer with something to read (a false true/false pairing). */
+.goodDetail {
+  background: var(--success-soft);
+  color: var(--text);
+}
+.pairs {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.pair {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+}
+.pair + .pair {
+  border-top: 1px solid var(--border);
+}
+.pair dd {
+  margin: 0;
+}
+.pairLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
 .compare {
   display: flex;
   flex-direction: column;

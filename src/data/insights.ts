@@ -1,13 +1,23 @@
 /**
- * AI Insight explanations: cached per user in users/{uid}/insights/{key} and
- * generated with Gemini (Firebase AI Logic) on a cache miss.
+ * AI Insight explanations and AI Hints: cached per user in
+ * users/{uid}/insights/{key} and generated with Gemini (Firebase AI Logic) on
+ * a cache miss.
  */
 import { getDoc, setDoc } from 'firebase/firestore'
-import { AI_INSIGHT_MODEL } from '../config/app'
-import { buildInsightPrompt, insightKey, type InsightRequest } from '../lib/insight'
+import { AI_MODEL } from '../config/app'
+import type { AiTask } from '../firebase/ai'
+import {
+  buildHintPrompt,
+  buildInsightPrompt,
+  hintKey,
+  insightKey,
+  maskAnswer,
+  type HintRequest,
+  type InsightRequest,
+} from '../lib/insight'
 import { insightRef } from './paths'
 
-/** Longest explanation stored (firestore.rules allows a little more). */
+/** Longest text stored (firestore.rules allows a little more). */
 const MAX_TEXT = 4000
 
 export type InsightErrorKind = 'offline' | 'quota' | 'blocked' | 'failed'
@@ -30,6 +40,55 @@ function classify(err: unknown): InsightErrorKind {
   return 'failed'
 }
 
+interface Job {
+  uid: string
+  task: AiTask
+  key: string
+  prompt: string
+  setId: string
+  cardId: string
+  /** Cleans up the text before it's shown or stored (e.g. hides the answer in a hint). */
+  clean?: (text: string) => string
+}
+
+/** Serves the cached reply, or streams a new one from Gemini and caches it. */
+async function cachedOrStreamed(job: Job, onText: (text: string) => void, signal?: AbortSignal): Promise<string> {
+  const clean = job.clean ?? ((t: string) => t)
+  const ref = insightRef(job.uid, job.key)
+  const cached = await getDoc(ref).catch(() => null)
+  const cachedText = cached?.data()?.text
+  if (typeof cachedText === 'string' && cachedText) {
+    onText(cachedText)
+    return cachedText
+  }
+
+  let text = ''
+  try {
+    const { geminiModel } = await import('../firebase/ai')
+    const { stream } = await geminiModel(job.task).generateContentStream(job.prompt, { signal })
+    for await (const chunk of stream) {
+      text += chunk.text()
+      onText(clean(text))
+    }
+  } catch (err) {
+    if (signal?.aborted) throw err
+    console.error(`AI ${job.task} failed`, err)
+    throw new InsightError(classify(err), err)
+  }
+  text = clean(text.trim()).slice(0, MAX_TEXT)
+  if (!text) throw new InsightError('failed')
+
+  setDoc(ref, {
+    kind: job.task,
+    setId: job.setId,
+    cardId: job.cardId,
+    text,
+    model: AI_MODEL,
+    createdAt: Date.now(),
+  }).catch((err: unknown) => console.warn(`Could not cache AI ${job.task}`, err))
+  return text
+}
+
 /**
  * Explains a wrong answer. Calls `onText` with the explanation so far (a cached
  * one at once, a new one as it streams in) and resolves with the full text.
@@ -40,36 +99,20 @@ export async function explainWrongAnswer(
   onText: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const ref = insightRef(uid, await insightKey(req))
-  const cached = await getDoc(ref).catch(() => null)
-  const cachedText = cached?.data()?.text
-  if (typeof cachedText === 'string' && cachedText) {
-    onText(cachedText)
-    return cachedText
-  }
+  const job: Job = { uid, task: 'insight', key: await insightKey(req), prompt: buildInsightPrompt(req), setId: req.setId, cardId: req.cardId }
+  return cachedOrStreamed(job, onText, signal)
+}
 
-  let text = ''
-  try {
-    const { insightModel } = await import('../firebase/ai')
-    const { stream } = await insightModel().generateContentStream(buildInsightPrompt(req), { signal })
-    for await (const chunk of stream) {
-      text += chunk.text()
-      onText(text)
-    }
-  } catch (err) {
-    if (signal?.aborted) throw err
-    console.error('AI Insight failed', err)
-    throw new InsightError(classify(err), err)
-  }
-  text = text.trim().slice(0, MAX_TEXT)
-  if (!text) throw new InsightError('failed')
-
-  setDoc(ref, {
+/** A hint towards a card's answer that doesn't give it away. Same streaming and caching as above. */
+export async function hintForCard(uid: string, req: HintRequest, onText: (text: string) => void, signal?: AbortSignal): Promise<string> {
+  const job: Job = {
+    uid,
+    task: 'hint',
+    key: await hintKey(req),
+    prompt: buildHintPrompt(req),
     setId: req.setId,
     cardId: req.cardId,
-    text,
-    model: AI_INSIGHT_MODEL,
-    createdAt: Date.now(),
-  }).catch((err: unknown) => console.warn('Could not cache AI Insight', err))
-  return text
+    clean: (text) => maskAnswer(text, req.answer),
+  }
+  return cachedOrStreamed(job, onText, signal)
 }

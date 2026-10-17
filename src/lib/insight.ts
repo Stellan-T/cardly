@@ -1,7 +1,7 @@
 /**
- * AI Insight: what Gemini is told about a wrong answer, and the key its
- * explanation is cached under. Pure functions; the network side lives in
- * data/insights.ts.
+ * AI Insight and AI Hint: what Gemini is told about a card (a wrong answer to
+ * explain, or an answer to hint at) and the keys the replies are cached under.
+ * Pure functions; the network side lives in data/insights.ts.
  */
 import type { Side } from '../types'
 import { baseNormalize } from './grade'
@@ -70,12 +70,64 @@ export function buildInsightPrompt(r: InsightRequest): string {
   return lines.filter(Boolean).join('\n')
 }
 
+export interface HintRequest {
+  setId: string
+  cardId: string
+  setTitle: string
+  promptSide: Side
+  prompt: string
+  answerSide: Side
+  /** The answer the student is trying to recall (never shown to them by the hint). */
+  answer: string
+  promptLang: string
+  answerLang: string
+}
+
+/** The user message for a hint: the card the student is trying to answer. */
+export function buildHintPrompt(r: HintRequest): string {
+  const lang = (code: string) => (code ? ` (${languageName(code)})` : '')
+  return [
+    '<card>',
+    r.setTitle && `Set: ${clip(r.setTitle)}`,
+    `${SIDE_NAME[r.promptSide]} shown${lang(r.promptLang)}: ${clip(r.prompt)}`,
+    `${SIDE_NAME[r.answerSide]} to recall, keep it hidden${lang(r.answerLang)}: ${clip(r.answer)}`,
+    '</card>',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Replaces the answer with "___" wherever it appears in a hint, in case the
+ * model gives it away. Checks the whole answer and each of its listed options
+ * ("big, large"); very short parts are left alone, they'd match inside words.
+ */
+export function maskAnswer(text: string, answer: string): string {
+  const parts = [answer, ...answer.split(/[,;/]|\bor\b/)]
+    .map((p) => p.replace(/\([^)]*\)/g, '').trim())
+    .filter((p) => p.length >= 3)
+    .sort((a, b) => b.length - a.length)
+  let out = text
+  for (const part of new Set(parts)) {
+    out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(part)}(?![\\p{L}\\p{N}])`, 'giu'), '___')
+  }
+  return out
+}
+
+async function shortHash(parts: unknown[]): Promise<string> {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(parts)))
+  return Array.from(new Uint8Array(bytes).slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** Cache key for a hint: one per card, direction and card text. */
+export const hintKey = (r: HintRequest) => shortHash(['hint', r.setId, r.cardId, r.answerSide, r.prompt, r.answer])
+
 /**
  * Cache key for an explanation: the same card, direction and (normalised)
  * answer reuse one explanation, so repeating a mistake costs nothing.
  */
-export async function insightKey(r: InsightRequest): Promise<string> {
-  const parts = [r.setId, r.cardId, r.answerSide, r.correctAnswer, r.shown ?? '', baseNormalize(r.userAnswer)]
-  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(parts)))
-  return Array.from(new Uint8Array(bytes).slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('')
+export function insightKey(r: InsightRequest): Promise<string> {
+  return shortHash([r.setId, r.cardId, r.answerSide, r.correctAnswer, r.shown ?? '', baseNormalize(r.userAnswer)])
 }

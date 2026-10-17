@@ -39,6 +39,7 @@ import { stopSpeaking } from '../../lib/tts'
 import type { Card, FlashcardMethod, Side, TermProgress } from '../../types'
 import { useAuth } from '../auth/AuthProvider'
 import { useStudySet } from '../sets/StudySetContext'
+import { AiHint } from '../study/AiInsight'
 import { StarredOnlyOption } from '../study/CommonOptions'
 import { useModeOptions, useProgress, useSessionState, useSpeech, useStudyActivity, useStudyCards } from '../study/hooks'
 import { OptionGroup, StudyLayout } from '../study/StudyLayout'
@@ -506,6 +507,12 @@ export default function FlashcardsPage() {
           front={faceFor(current, frontSide)}
           back={faceFor(current, backSide)}
         />
+        <AiHint
+          key={`hint-${current.id}`}
+          question={{ cardId: current.id, promptSide: frontSide, prompt: sideOf(current, frontSide), answerSide: backSide, answer: sideOf(current, backSide) }}
+          hideButton={flipped}
+          centered
+        />
         {effectiveMethod === 'sort' ? (
           <div className={styles.sortButtons}>
             <button type="button" className={`btn btn-lg ${styles.learningBtn}`} onClick={() => sortCard('learning')} data-testid="fc-learning">
@@ -818,6 +825,12 @@ function SrsView({
         actions={cardActions(card)}
         front={faceFor(card, frontSide)}
         back={faceFor(card, backSide)}
+      />
+      <AiHint
+        key={`hint-${card.id}`}
+        question={{ cardId: card.id, promptSide: frontSide, prompt: sideOf(card, frontSide), answerSide: backSide, answer: sideOf(card, backSide) }}
+        hideButton={flipped}
+        centered
       />
       {flipped && intervals ? (
         <div className={styles.ratings} role="group" aria-label="How well did you remember?">

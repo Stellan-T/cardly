@@ -153,12 +153,18 @@ The build reads the Firebase config from the committed `.env`, so no secrets are
 to keep the config out of the repository, empty the values in `.env` and add repository secrets with
 the same names under **Settings → Secrets and variables → Actions**; secrets override `.env`.)
 
-### 1.8 Optional: turn on AI Insight (Gemini)
+### 1.8 Optional: turn on AI Insight and AI Hint (Gemini)
 
-After a wrong answer in Learn, and for every missed question on the Test results page, an
-**AI Insight** button asks Gemini why the answer was wrong, why the correct answer is right and how
-the two differ. It uses **Firebase AI Logic** with the **Gemini Developer API**, which has a free
-tier on the Spark plan. The button stays hidden until `VITE_RECAPTCHA_SITE_KEY` is set.
+- **AI Insight:** after a wrong answer in Learn, and for every missed question on the Test results
+  page, Gemini explains why the answer was wrong, why the correct answer is right and how the two
+  differ.
+- **AI Hint:** before you answer in Learn, or before you flip a card in Flashcards, Gemini gives a
+  hint (an example sentence with a blank, a context or a memory hook) without revealing the answer.
+  Any word of the answer that slips into the hint is replaced with `___`. In Learn, a correct answer
+  after a hint doesn't count as a first-try answer. Tests have no hints.
+
+Both use **Firebase AI Logic** with the **Gemini Developer API**, which has a free tier on the Spark
+plan. The buttons stay hidden until `VITE_RECAPTCHA_SITE_KEY` is set.
 
 1. **Firebase console → AI Services → AI Logic → Get started** and choose the **Gemini Developer
    API**. Firebase enables the API and keeps the Gemini key on its side. Don't put a Gemini key in
@@ -175,20 +181,20 @@ tier on the Spark plan. The button stays hidden until `VITE_RECAPTCHA_SITE_KEY` 
 6. Open the deployed app, get an answer wrong and press **AI Insight**. Then go to **App Check →
    APIs → Firebase AI Logic** and click **Enforce**. Firebase requires App Check enforcement for AI
    Logic from November 2, 2026. **Don't enforce App Check for Cloud Firestore**: the app only starts
-   App Check when AI Insight is first used, so enforcing it for Firestore would block normal
+   App Check when AI help is first used, so enforcing it for Firestore would block normal
    loading.
 7. Optional: lower the per-user request limit for the Firebase AI Logic API under **Google Cloud
    console → IAM & Admin → Quotas** so one account can't use up the free tier.
 
-**Local development:** `npm run dev`, press AI Insight once and copy the App Check debug token that
-the browser console prints. Add it under **App Check → Apps → ⋮ → Manage debug tokens**, then put it
-in `.env.local` as `VITE_APPCHECK_DEBUG_TOKEN=…` so it stays the same. Never commit it. AI Insight is
+**Local development:** `npm run dev`, press AI Insight or AI Hint once and copy the App Check
+debug token that the browser console prints. Add it under **App Check → Apps → ⋮ → Manage debug tokens**, then put it
+in `.env.local` as `VITE_APPCHECK_DEBUG_TOKEN=…` so it stays the same. Never commit it. AI help is
 off with the emulators.
 
-The model is `AI_INSIGHT_MODEL` in `src/config/app.ts`. Google retires Gemini models regularly, so
+The model is `AI_MODEL` in `src/config/app.ts`. Google retires Gemini models regularly, so
 check the [supported models](https://firebase.google.com/docs/ai-logic/models) now and then.
-Explanations are cached in `users/{uid}/insights`, so repeating the same mistake doesn't call Gemini
-again.
+Explanations and hints are cached in `users/{uid}/insights`, so repeating the same mistake or asking
+for a hint on the same card again doesn't call Gemini again.
 
 ### After the push
 
@@ -312,7 +318,7 @@ users/{uid}/sessions/{setId}             flashcards deck/piles, learn state, per
 users/{uid}/folders/{folderId}           name, setIds
 users/{uid}/tests/{testId}               setId, scorePct, correct, total, durationMs, settings, takenAt
 users/{uid}/images/{imageId}             dataUrl (≤150 KB WebP/JPEG), width, height, bytes
-users/{uid}/insights/{key}               cached AI Insight: setId, cardId, text, model, createdAt
+users/{uid}/insights/{key}               cached AI Insight or Hint: kind, setId, cardId, text, model, createdAt
 publicSets/{setId}                       read-only copy of a set shared by link (+ images subcollection)
 leaderboards/{setId}/match/{uid}         displayName, bestTimeMs, achievedAt
 ```

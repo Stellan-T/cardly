@@ -1,6 +1,9 @@
 .trigger {
   align-self: flex-start;
 }
+.triggerCentered {
+  align-self: center;
+}
 .panel {
   display: flex;
   flex-direction: column;

@@ -129,7 +129,7 @@ describe('users/{uid}/**', () => {
     await assertFails(setDoc(doc(alice(), 'users/alice/images/i3'), { dataUrl: `data:image/webp;base64,${'A'.repeat(400_001)}`, bytes: 1 }))
   })
 
-  it('keeps cached AI Insights private and validated', async () => {
+  it('keeps cached AI Insights and Hints private and validated', async () => {
     const insight = { setId: 's1', cardId: 'c1', text: 'Because…', model: 'gemini', createdAt: 1 }
     await assertSucceeds(setDoc(doc(alice(), 'users/alice/insights/k1'), insight))
     await assertSucceeds(getDoc(doc(alice(), 'users/alice/insights/k1')))
@@ -137,6 +137,8 @@ describe('users/{uid}/**', () => {
     await assertFails(setDoc(doc(bob(), 'users/alice/insights/k2'), insight))
     await assertFails(setDoc(doc(alice(), 'users/alice/insights/k3'), { ...insight, text: '' }))
     await assertFails(setDoc(doc(alice(), 'users/alice/insights/k4'), { ...insight, text: 'x'.repeat(5001) }))
+    await assertSucceeds(setDoc(doc(alice(), 'users/alice/insights/k5'), { ...insight, kind: 'hint' }))
+    await assertFails(setDoc(doc(alice(), 'users/alice/insights/k6'), { ...insight, kind: 'essay' }))
   })
 })
 

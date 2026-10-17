@@ -41,6 +41,7 @@ export {
   Keyboard,
   KeyRound,
   Layers,
+  Lightbulb,
   LayoutGrid,
   Library,
   Link,
