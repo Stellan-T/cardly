@@ -190,6 +190,7 @@ export default function LearnPage() {
           'True / False',
         ],
         [<K key="en">Enter</K>, 'Submit / continue'],
+        [<K key="tab">Tab</K>, 'Ask AI about a correct answer (while it counts down)'],
         [<K key="sp">Space</K>, 'Show the answer (flashcard questions)'],
       ],
     },

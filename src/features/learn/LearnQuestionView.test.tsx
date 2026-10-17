@@ -175,6 +175,25 @@ describe('LearnQuestionView Ask AI after a correct answer', () => {
     expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
   })
 
+  it('Tab opens Ask AI during the countdown', () => {
+    ai.available = true
+    const { onDone } = mcCorrect()
+    fireEvent.keyDown(window, { key: 'Tab' })
+    expect(screen.getByTestId('learn-correct-chat')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(10_000))
+    expect(onDone).not.toHaveBeenCalled()
+  })
+
+  it('leaves Tab alone when there is no countdown', () => {
+    const { onDone } = mcCorrect()
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', cancelable: true })
+    window.dispatchEvent(tab)
+    expect(tab.defaultPrevented).toBe(false)
+    expect(screen.queryByTestId('learn-correct-chat')).toBeNull()
+    act(() => vi.advanceTimersByTime(1000))
+    expect(onDone).toHaveBeenCalled()
+  })
+
   it('pressing Ask AI stops the countdown and opens the chat with Continue', () => {
     ai.available = true
     const { onDone } = mcCorrect()

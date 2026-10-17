@@ -110,6 +110,7 @@ export function LearnQuestionView({
   const [asking, setAsking] = useState(false)
   const holdCorrect = feedback?.kind === 'correct' && (!!wrongCard || !!nearMiss || asking)
   const advanceMs = aiAvailable ? AUTO_ADVANCE_WITH_AI_MS : AUTO_ADVANCE_MS
+  const countingDown = aiAvailable && feedback?.kind === 'correct' && !holdCorrect
 
   useEffect(() => {
     if (feedback?.kind === 'wrong' || holdCorrect) continueRef.current?.focus()
@@ -194,6 +195,8 @@ export function LearnQuestionView({
         if (feedback?.kind === 'wrong' && retypeOk) finishWrong()
         else if (feedback?.kind === 'correct') onDone({ correct: true, firstTry: !peeked })
       },
+      // Tab opens Ask AI while a correct answer counts down; otherwise Tab keeps moving focus.
+      ...(countingDown ? { tab: () => setAsking(true) } : {}),
     },
     { force: ['space'] },
   )
@@ -419,7 +422,7 @@ export function LearnQuestionView({
               <span className="spacer" />
               <button type="button" className="btn btn-soft btn-sm" onClick={() => setAsking(true)} data-testid="learn-ask-ai">
                 <MessagesSquare size={16} aria-hidden />
-                Ask AI
+                Ask AI <kbd className="hide-mobile">Tab</kbd>
               </button>
               <span className={styles.countdown} style={{ animationDuration: `${advanceMs}ms` }} aria-hidden />
             </>
