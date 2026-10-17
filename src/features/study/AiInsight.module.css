@@ -4,10 +4,16 @@
 .triggerCentered {
   align-self: center;
 }
+.triggers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-self: flex-start;
+}
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
   background: var(--surface);
@@ -43,4 +49,54 @@
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-subtle);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.block + .block {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: min(50vh, 420px);
+  overflow-y: auto;
+}
+.mine,
+.theirs {
+  max-width: 88%;
+  padding: 8px 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.mine {
+  align-self: flex-end;
+  border-radius: var(--radius) var(--radius) 4px var(--radius);
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+}
+.theirs {
+  align-self: flex-start;
+  border-radius: var(--radius) var(--radius) var(--radius) 4px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ask {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.askInput {
+  flex: 1;
+  min-height: 44px;
+  max-height: 160px;
+  resize: vertical;
+  font: inherit;
 }

@@ -1,6 +1,7 @@
 /**
- * AI Insight and AI Hint: what Gemini is told about a card (a wrong answer to
- * explain, or an answer to hint at) and the keys the replies are cached under.
+ * AI Insight, AI Hint and Ask AI: what Gemini is told about a card (a wrong
+ * answer to explain, an answer to hint at, follow-up questions) and the keys
+ * the cached replies are stored under.
  * Pure functions; the network side lives in data/insights.ts.
  */
 import type { Side } from '../types'
@@ -142,4 +143,33 @@ export const hintKey = (r: HintRequest) => shortHash(['hint', r.setId, r.cardId,
  */
 export function insightKey(r: InsightRequest): Promise<string> {
   return shortHash([r.setId, r.cardId, r.answerSide, r.correctAnswer, r.shown ?? '', baseNormalize(r.userAnswer), r.accepted ?? ''])
+}
+
+export interface ChatTurn {
+  role: 'user' | 'model'
+  text: string
+}
+
+/** Longest follow-up question a student can send. */
+export const MAX_CHAT_QUESTION = 500
+/** Follow-up questions per wrong answer; keeps one card from eating the free tier. */
+export const MAX_CHAT_QUESTIONS = 10
+
+/**
+ * The conversation sent to Gemini for a follow-up question: the card (and the
+ * AI Insight already shown, if any) first, then the questions and replies so
+ * far. Turns alternate user/model and end with the student's newest question.
+ */
+export function buildChatTurns(req: InsightRequest, insight: string | null, turns: readonly ChatTurn[]): ChatTurn[] {
+  const card = buildInsightPrompt(req)
+  if (insight) {
+    return [
+      { role: 'user', text: `${card}\nExplain my mistake.` },
+      { role: 'model', text: insight },
+      ...turns,
+    ]
+  }
+  const [first, ...rest] = turns
+  if (!first) return [{ role: 'user', text: card }]
+  return [{ role: 'user', text: `${card}\n\nMy question: ${first.text}` }, ...rest]
 }
