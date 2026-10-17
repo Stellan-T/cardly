@@ -38,6 +38,12 @@ describe('buildInsightPrompt', () => {
     expect(text).not.toContain("Student's answer")
   })
 
+  it('tells the model when a near-miss answer was accepted', () => {
+    expect(buildInsightPrompt(base)).not.toContain('accepted')
+    const text = buildInsightPrompt({ ...base, userAnswer: 'embarasada', accepted: 'typo' })
+    expect(text).toContain('The app accepted this answer as correct (small typo ignored), but it is not the exact wording.')
+  })
+
   it('caps very long card text', () => {
     const text = buildInsightPrompt({ ...base, correctAnswer: 'x'.repeat(5000) })
     expect(text.length).toBeLessThan(2500)
@@ -56,6 +62,7 @@ describe('insightKey', () => {
     expect(await insightKey({ ...base, userAnswer: 'ashamed' })).not.toBe(a)
     expect(await insightKey({ ...base, correctAnswer: 'expecting' })).not.toBe(a)
     expect(await insightKey({ ...base, answerSide: 'term' })).not.toBe(a)
+    expect(await insightKey({ ...base, accepted: 'meaning' })).not.toBe(a)
   })
 })
 

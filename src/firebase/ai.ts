@@ -25,6 +25,9 @@ A student just answered a flashcard question wrong. Using the card details you a
 2. Explain why the correct answer is right, with one short memory hint if a good one exists.
 3. If the two are related or easily confused, explain the key difference. Skip this if they are unrelated.
 If the student's answer is in fact also correct (a synonym, an accepted spelling or an equivalent answer), say so plainly instead.
+If the card details say the app accepted the answer as correct, don't call it wrong. Instead say exactly how it
+differs from the card's wording (spelling, accents, word order, a missing or extra word) and whether that difference
+changes the meaning or could hint at a slightly wrong idea, then give the best way to phrase it. Skip steps 1 to 3 then.
 If the card itself looks wrong, mention that briefly.
 Keep it under 120 words. Plain text only: no Markdown, no headings, no bold, no preamble. Short "- " bullet lines are fine.
 Write in English, but quote terms in their original language.

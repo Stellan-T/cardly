@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Confetti } from '../../components/Confetti'
 import { Brain, Check, Printer, RotateCcw, X } from '../../components/icons'
 import { formatDate, formatDuration } from '../../lib/format'
-import { GRADE_REASON_TEXT } from '../../lib/grade'
+import { GRADE_REASON_TEXT, NEAR_MISS_REASONS } from '../../lib/grade'
 import { cardForAnswer, meaningLabel, otherCard, otherSide, QUESTION_TYPE_LABELS, sideText } from '../../lib/questions'
 import type { GeneratedTest, QuestionResult, TestQuestion, TestScore } from '../../lib/testGen'
 import type { Card } from '../../types'
@@ -146,6 +146,8 @@ function ReviewItem({
   const promptSide = otherSide(q.answerSide)
   const answerLang = langAttr(langOf(q.answerSide))
   const tf = q.type === 'tf'
+  // Accepted, but not the card's exact wording: worth a closer look.
+  const nearMiss = q.type === 'written' && r.correct && !r.overridden && !!r.reason && NEAR_MISS_REASONS.has(r.reason)
   const showExpected = !r.correct || (q.type === 'written' && !EXACT_REASONS.has(r.reason ?? 'exact'))
   const textLang = tf ? undefined : answerLang
   const yours = !r.answered
@@ -225,7 +227,7 @@ function ReviewItem({
           The correct {SIDE_LABEL[q.answerSide].toLowerCase()} is <span lang={answerLang}>“{q.answer}”</span>.
         </p>
       )}
-      {r.answered && !r.correct && (
+      {r.answered && (!r.correct || nearMiss) && (
         <div className="no-print">
           <AiInsight
             question={{
@@ -238,6 +240,7 @@ function ReviewItem({
               userAnswer: r.response,
               userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
               shown: tf ? q.shown.text : undefined,
+              accepted: nearMiss && r.reason ? r.reason : undefined,
             }}
           />
         </div>

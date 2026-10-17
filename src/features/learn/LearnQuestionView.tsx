@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useHotkeys } from '../../components/hotkeys'
 import { Check, Volume2, X } from '../../components/icons'
 import { AudioButton, CardImage, StarButton } from '../../components/StudyButtons'
-import { grade, GRADE_REASON_TEXT, letterDiff, type GradeResult } from '../../lib/grade'
+import { grade, GRADE_REASON_TEXT, letterDiff, NEAR_MISS_REASONS, type GradeReason, type GradeResult } from '../../lib/grade'
 import type { LearnQuestion } from '../../lib/learn'
 import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../../lib/questions'
 import { ttsSupported } from '../../lib/tts'
@@ -36,10 +36,16 @@ interface Props {
 }
 
 type Feedback =
-  | { kind: 'correct'; text?: string }
+  | { kind: 'correct'; text?: string; nearMiss?: { response: string; reason: GradeReason } }
   | { kind: 'wrong'; response?: string; written: boolean; result?: GradeResult }
 
 const AUTO_ADVANCE_MS = 900
+
+const NEAR_MISS_HEAD: Partial<Record<GradeReason, string>> = {
+  accent: 'Correct! Mind the accents, though.',
+  typo: 'Correct! Mind the spelling, though.',
+  meaning: 'Correct! The exact wording is a little different.',
+}
 
 /** Renders one Learn question of any type and its feedback. */
 export function LearnQuestionView({
@@ -94,8 +100,10 @@ export function LearnQuestionView({
           : feedback.response
             ? cardForAnswer(feedback.response, q.answerSide, pool, card.id)
             : undefined
-  // A correct answer that comes with a meaning to read waits for Continue.
-  const holdCorrect = feedback?.kind === 'correct' && !!wrongCard
+  // A correct answer that comes with something to read (a meaning, or the exact
+  // wording of a near miss) waits for Continue.
+  const nearMiss = feedback?.kind === 'correct' ? feedback.nearMiss : undefined
+  const holdCorrect = feedback?.kind === 'correct' && (!!wrongCard || !!nearMiss)
 
   useEffect(() => {
     if (feedback?.kind === 'wrong' || holdCorrect) continueRef.current?.focus()
@@ -141,7 +149,11 @@ export function LearnQuestionView({
     onFeedback(result.correct)
     setFeedback(
       result.correct
-        ? { kind: 'correct', text: GRADE_REASON_TEXT[result.reason] }
+        ? {
+            kind: 'correct',
+            text: GRADE_REASON_TEXT[result.reason],
+            nearMiss: !isSpell && NEAR_MISS_REASONS.has(result.reason) ? { response, reason: result.reason } : undefined,
+          }
         : { kind: 'wrong', response, written: true, result },
     )
   }
@@ -374,6 +386,51 @@ export function LearnQuestionView({
             <Check size={20} /> {feedback.text ?? 'Correct! These don’t match.'}
           </div>
           {tfPairs}
+          <div className="row">
+            <span className="spacer" />
+            <button
+              ref={continueRef}
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onDone({ correct: true, firstTry: !peeked })}
+              data-testid="learn-continue"
+            >
+              Continue <kbd>Enter</kbd>
+            </button>
+          </div>
+        </div>
+      )}
+      {nearMiss && (
+        <div className={`${styles.feedback} ${styles.goodDetail}`} role="status" data-testid="learn-near-miss">
+          <div className={`${styles.feedbackHead} ${styles.feedbackHeadGood}`}>
+            <Check size={20} /> {NEAR_MISS_HEAD[nearMiss.reason]}
+          </div>
+          <dl className={styles.pairs}>
+            <div className={styles.pair}>
+              <dt className={styles.pairLabel}>Your answer</dt>
+              <dd className="pre-wrap" lang={langOf(q.answerSide)}>
+                {nearMiss.response}
+              </dd>
+            </div>
+            <div className={styles.pair}>
+              <dt className={styles.pairLabel}>Exact wording</dt>
+              <dd className={`${styles.right} pre-wrap`} lang={langOf(q.answerSide)}>
+                {answer}
+              </dd>
+            </div>
+          </dl>
+          <AiInsight
+            question={{
+              cardId: card.id,
+              questionType: q.type,
+              promptSide,
+              prompt,
+              answerSide: q.answerSide,
+              correctAnswer: answer,
+              userAnswer: nearMiss.response,
+              accepted: nearMiss.reason,
+            }}
+          />
           <div className="row">
             <span className="spacer" />
             <button
