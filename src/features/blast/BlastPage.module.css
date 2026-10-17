@@ -229,6 +229,16 @@
 .choices .inactive {
   opacity: 0.6;
 }
+.choiceBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.choiceMeaning {
+  font-size: 0.78rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
 .wrong .choiceText {
   text-decoration: line-through;
 }

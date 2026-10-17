@@ -21,7 +21,7 @@ import {
   type TextLayout,
   type Wave,
 } from '../../lib/blast'
-import { answerSideFor } from '../../lib/questions'
+import { answerSideFor, meaningLabel, sideText } from '../../lib/questions'
 import { createRng, type Rng } from '../../lib/random'
 import { playSound } from '../../lib/sound'
 import type { Card, Side } from '../../types'
@@ -56,6 +56,8 @@ export interface ChoiceView {
   id: number
   text: string
   state: 'live' | 'wrong' | 'reveal' | 'hit'
+  /** Wrong hits: the other side of the card this answer belongs to. */
+  meaning?: string
 }
 
 export interface EngineState {
@@ -372,10 +374,20 @@ export class BlastEngine {
     if (this.keyboard || this.targetId === a.id) this.targetId = correct?.id ?? null
     if (this.hoverId === a.id) this.hoverId = null
     playSound('incorrect')
+    const meaning = this.meaningOf(a)
     this.cb.onAnnounce(
-      `Wrong${lost ? `, minus ${lost} points` : ''}. The correct answer, ${correct?.text ?? ''}, is highlighted. ` +
+      `Wrong${lost ? `, minus ${lost} points` : ''}. ` +
+        (meaning ? `${meaningLabel(this.wave!.answerSide, a.text)} ${meaning}. ` : '') +
+        `The correct answer, ${correct?.text ?? ''}, is highlighted. ` +
         'The cannon cools down for a second.',
     )
+  }
+
+  /** The other side of the card a (wrong) asteroid's text belongs to. */
+  private meaningOf(a: Asteroid): string | undefined {
+    const wave = this.wave
+    const card = wave && this.config?.pool.find((c) => c.id === a.cardId)
+    return wave && card ? sideText(card, wave.promptSide) : undefined
   }
 
   private finish() {
@@ -435,7 +447,10 @@ export class BlastEngine {
       if (byId.get(a.id)?.disabled) return 'wrong'
       return a.correct && this.waveMissed ? 'reveal' : 'live'
     }
-    const choices = (wave?.asteroids ?? []).map((a): ChoiceView => ({ id: a.id, text: a.text, state: stateOf(a) }))
+    const choices = (wave?.asteroids ?? []).map((a): ChoiceView => {
+      const state = stateOf(a)
+      return { id: a.id, text: a.text, state, meaning: state === 'wrong' ? this.meaningOf(a) : undefined }
+    })
     this.cb.onChange({
       phase: this.phase,
       score: this.score,

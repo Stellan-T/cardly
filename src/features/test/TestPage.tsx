@@ -191,6 +191,7 @@ export default function TestPage() {
     body = (
       <TestResults
         title={meta.title}
+        cards={allCards}
         test={results.test}
         score={score}
         durationMs={results.durationMs}

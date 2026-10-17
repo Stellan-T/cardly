@@ -3,8 +3,9 @@ import { Check, RefreshCw, X } from '../../components/icons'
 import { AudioButton, CardImage } from '../../components/StudyButtons'
 import type { ImageSource } from '../../data/images'
 import { GRADE_REASON_TEXT, type GradeReason } from '../../lib/grade'
-import { otherSide, sideText } from '../../lib/questions'
-import type { Side } from '../../types'
+import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../../lib/questions'
+import type { Card, Side } from '../../types'
+import { useStudySet } from '../sets/StudySetContext'
 import { useSpeech } from '../study/hooks'
 import { exactish, type BlocksQuestion } from './questions'
 import styles from './BlocksPage.module.css'
@@ -22,6 +23,21 @@ export interface Answered {
 
 const SIDE_NAME: Record<Side, string> = { term: 'term', definition: 'definition' }
 
+/** The card a wrong answer actually belongs to, so the feedback can say what it means. */
+export function wrongAnswerCard(q: BlocksQuestion, a: Answered, pool: readonly Card[]): Card | undefined {
+  if (a.correct) return undefined
+  if (q.kind === 'mc') return otherCard(pool, q.choices[a.choice ?? -1]?.cardId, q.card.id)
+  if (q.kind === 'tf') return !q.isTrue && a.tf ? otherCard(pool, q.shown.cardId, q.card.id) : undefined
+  return cardForAnswer(a.text ?? '', q.answerSide, pool, q.card.id)
+}
+
+/** "Your answer means …" / "That means …" for a wrong answer, or '' when it isn't another card's. */
+export function meaningSentence(q: BlocksQuestion, a: Answered, pool: readonly Card[]): string {
+  const other = wrongAnswerCard(q, a, pool)
+  if (!other) return ''
+  return `${meaningLabel(q.answerSide, q.kind === 'tf' ? 'That' : undefined)} ${sideText(other, otherSide(q.answerSide))}.`
+}
+
 interface Props {
   question: BlocksQuestion
   answered: Answered | null
@@ -38,6 +54,7 @@ interface Props {
 /** The question between trays. Remount it (key) for every new question. */
 export function QuestionPanel({ question: q, answered, imageSource, panelRef, inputRef, onChoice, onTrueFalse, onWritten, onRefresh, onNext }: Props) {
   const { langOf, voiceOf } = useSpeech()
+  const { cards } = useStudySet()
   const [text, setText] = useState('')
   const headingId = useId()
   const inputId = useId()
@@ -47,6 +64,7 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
   const langAttr = (l: string) => (l && l !== 'und' ? l : undefined)
   const sideName = SIDE_NAME[q.answerSide]
   const correctText = sideText(q.card, q.answerSide)
+  const wrongCard = answered ? wrongAnswerCard(q, answered, cards) : undefined
 
   let body
   if (q.kind === 'mc') {
@@ -186,6 +204,12 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
               {q.kind === 'written' && answered.text?.trim() && (
                 <div>
                   You wrote: <span lang={langAttr(answerLang)}>{answered.text}</span>
+                </div>
+              )}
+              {wrongCard && (
+                <div data-testid="blocks-meaning">
+                  {meaningLabel(q.answerSide, q.kind === 'tf' ? 'That' : undefined)}{' '}
+                  <span lang={langAttr(promptLang)}>{sideText(wrongCard, promptSide)}</span>.
                 </div>
               )}
             </div>

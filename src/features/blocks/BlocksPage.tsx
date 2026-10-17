@@ -37,7 +37,7 @@ import { AnswerWithOption, GradingOptions, StarredOnlyOption } from '../study/Co
 import { OptionGroup, StudyLayout } from '../study/StudyLayout'
 import { useGrading, useHasStarred, useModeOptions, useProgress, useSpeech, useStudyActivity, useStudyCards } from '../study/hooks'
 import { PieceView } from './PieceView'
-import { QuestionPanel, type Answered } from './QuestionPanel'
+import { meaningSentence, QuestionPanel, type Answered } from './QuestionPanel'
 import { buildQuestion, drawFromDeck, exactish, type BlocksQuestion, type QuestionFormat } from './questions'
 import { usePieceDrag } from './useDrag'
 import styles from './BlocksPage.module.css'
@@ -122,7 +122,7 @@ function cellOf(target: EventTarget): Spot | null {
 }
 
 export default function BlocksPage() {
-  const { imageSource, progress, status } = useStudySet()
+  const { cards: allCards, imageSource, progress, status } = useStudySet()
   const [opts, setOpts] = useModeOptions<BlocksOptions>('blocks', DEFAULTS)
   const hasStarred = useHasStarred()
   const pool = useStudyCards(opts.starredOnly && hasStarred)
@@ -230,7 +230,7 @@ export default function BlocksPage() {
       later(dealNext, exactish(a.reason) ? 900 : 1800)
     } else {
       playSound('incorrect')
-      setLive(`Not quite. The ${q.answerSide} is ${correctText}.`)
+      setLive(`Not quite. The ${q.answerSide} is ${correctText}. ${meaningSentence(q, a, allCards)}`.trim())
     }
   }
 

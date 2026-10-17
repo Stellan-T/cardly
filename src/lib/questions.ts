@@ -3,6 +3,7 @@
  * which side is asked, multiple-choice distractors and true/false pairings.
  */
 import type { AnswerWith, Card, Side } from '../types'
+import { grade } from './grade'
 import { shuffle, type Rng } from './random'
 
 export type QuestionType = 'flashcard' | 'mc' | 'tf' | 'written' | 'spell' | 'matching'
@@ -119,3 +120,20 @@ export function buildTrueFalse(card: Card, pool: readonly Card[], answerSide: Si
 
 /** True when the response is the same text as the expected answer (TF/MC pairings with duplicate text). */
 export const sameText = (a: string, b: string) => norm(a) === norm(b)
+
+/** The card in `pool` with this id, unless it's the card being asked about. */
+export const otherCard = (pool: readonly Card[], id: string | undefined, askedId: string) =>
+  id === undefined || id === askedId ? undefined : pool.find((c) => c.id === id)
+
+/**
+ * The other card a wrong typed answer belongs to (its `side` reads like the
+ * response), so feedback can say what the learner's answer actually means.
+ */
+export function cardForAnswer(response: string, side: Side, pool: readonly Card[], askedId: string): Card | undefined {
+  if (!response.trim()) return undefined
+  return pool.find((c) => c.id !== askedId && grade(response, sideText(c, side), { level: 'strict' }).correct)
+}
+
+/** Introduces the meaning of a wrong answer: the other side of the card it belongs to. */
+export const meaningLabel = (answerSide: Side, subject = 'Your answer') =>
+  answerSide === 'term' ? `${subject} means` : `${subject} is the definition of`

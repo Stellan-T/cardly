@@ -14,6 +14,7 @@ import {
   type BlastOptions,
   type BlastSpeed,
 } from '../../lib/blast'
+import { meaningLabel } from '../../lib/questions'
 import { randomSeed } from '../../lib/random'
 import { playSound } from '../../lib/sound'
 import { ttsSupported } from '../../lib/tts'
@@ -463,8 +464,16 @@ export default function BlastPage() {
                   <kbd className="hide-mobile" aria-hidden>
                     {i + 1}
                   </kbd>
-                  <span className={styles.choiceText} lang={wave ? langAttr(wave.answerSide) : undefined}>
-                    {c.text}
+                  <span className={styles.choiceBody}>
+                    <span className={styles.choiceText} lang={wave ? langAttr(wave.answerSide) : undefined}>
+                      {c.text}
+                    </span>
+                    {c.meaning && wave && (
+                      <span className={styles.choiceMeaning}>
+                        {meaningLabel(wave.answerSide, '').trim()}{' '}
+                        <span lang={langAttr(wave.promptSide)}>{c.meaning}</span>
+                      </span>
+                    )}
                   </span>
                   {c.state === 'wrong' && <span className="sr-only"> (wrong)</span>}
                   {c.state === 'reveal' && <span className="sr-only"> (correct answer)</span>}

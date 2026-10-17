@@ -320,6 +320,7 @@ export default function LearnPage() {
           key={state.current.qid}
           question={state.current}
           card={card}
+          pool={allCards}
           grading={{ level: grading.level, requireOne: grading.requireOne }}
           retype={opts.retype}
           imageSource={imageSource}

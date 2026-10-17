@@ -4,8 +4,9 @@ import { Confetti } from '../../components/Confetti'
 import { Brain, Check, Printer, RotateCcw, X } from '../../components/icons'
 import { formatDate, formatDuration } from '../../lib/format'
 import { GRADE_REASON_TEXT } from '../../lib/grade'
-import { QUESTION_TYPE_LABELS, otherSide } from '../../lib/questions'
+import { cardForAnswer, meaningLabel, otherCard, otherSide, QUESTION_TYPE_LABELS, sideText } from '../../lib/questions'
 import type { GeneratedTest, QuestionResult, TestQuestion, TestScore } from '../../lib/testGen'
+import type { Card } from '../../types'
 import { useSpeech } from '../study/hooks'
 import { cx, langAttr, SIDE_LABEL } from './TestQuestions'
 import styles from './TestPage.module.css'
@@ -22,6 +23,7 @@ const EXACT_REASONS = new Set(['exact', 'format'])
 
 export function TestResults({
   title,
+  cards,
   test,
   score,
   durationMs,
@@ -32,6 +34,8 @@ export function TestResults({
   onStudyMissed,
 }: {
   title: string
+  /** Every card in the set: what a wrong answer means is looked up here. */
+  cards: readonly Card[]
   test: GeneratedTest
   score: TestScore
   durationMs: number
@@ -117,7 +121,7 @@ export function TestResults({
           </div>
           <ol className={styles.reviewList}>
             {section.questions.map((q) => (
-              <ReviewItem key={q.id} q={q} r={score.byId[q.id]} onOverride={onOverride} />
+              <ReviewItem key={q.id} q={q} r={score.byId[q.id]} cards={cards} onOverride={onOverride} />
             ))}
           </ol>
         </section>
@@ -126,7 +130,17 @@ export function TestResults({
   )
 }
 
-function ReviewItem({ q, r, onOverride }: { q: TestQuestion; r: QuestionResult; onOverride: (q: TestQuestion) => void }) {
+function ReviewItem({
+  q,
+  r,
+  cards,
+  onOverride,
+}: {
+  q: TestQuestion
+  r: QuestionResult
+  cards: readonly Card[]
+  onOverride: (q: TestQuestion) => void
+}) {
   const { langOf } = useSpeech()
   const promptSide = otherSide(q.answerSide)
   const answerLang = langAttr(langOf(q.answerSide))
@@ -139,6 +153,19 @@ function ReviewItem({ q, r, onOverride }: { q: TestQuestion; r: QuestionResult; 
       ? `${r.letter}. ${r.response}`
       : r.response
   const expected = q.type === 'matching' ? `${q.correctLetter}. ${r.expected}` : r.expected
+  // The card a wrong answer actually belongs to, so the review can say what it means.
+  const wrongCard =
+    r.correct || !r.answered
+      ? undefined
+      : q.type === 'mc'
+        ? otherCard(cards, q.choices.find((c) => c.text === r.response)?.cardId, q.cardId)
+        : q.type === 'matching'
+          ? otherCard(cards, q.options.find((o) => o.letter === r.letter)?.cardId, q.cardId)
+          : q.type === 'tf'
+            ? q.isTrue
+              ? undefined
+              : otherCard(cards, q.shown.cardId, q.cardId)
+            : cardForAnswer(r.response, q.answerSide, cards, q.cardId)
 
   return (
     <li className={cx(styles.review, r.correct ? styles.reviewOk : styles.reviewBad)}>
@@ -181,6 +208,12 @@ function ReviewItem({ q, r, onOverride }: { q: TestQuestion; r: QuestionResult; 
               Correct answer
             </dt>
             <dd lang={textLang}>{expected}</dd>
+          </div>
+        )}
+        {wrongCard && (
+          <div className={styles.answerLine} data-testid="test-meaning">
+            <dt>{meaningLabel(q.answerSide, tf ? 'That' : undefined)}</dt>
+            <dd lang={langAttr(langOf(promptSide))}>{sideText(wrongCard, promptSide)}</dd>
           </div>
         )}
       </dl>

@@ -4,7 +4,7 @@ import { Check, Volume2, X } from '../../components/icons'
 import { AudioButton, CardImage, StarButton } from '../../components/StudyButtons'
 import { grade, GRADE_REASON_TEXT, letterDiff, type GradeResult } from '../../lib/grade'
 import type { LearnQuestion } from '../../lib/learn'
-import { otherSide, sideText } from '../../lib/questions'
+import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../../lib/questions'
 import { ttsSupported } from '../../lib/tts'
 import type { Card, GradingLevel, Side } from '../../types'
 import type { ImageSource } from '../../data/images'
@@ -18,6 +18,8 @@ export interface Verdict {
 interface Props {
   question: LearnQuestion
   card: Card
+  /** Every card in the set: what a wrong answer means is looked up here. */
+  pool: readonly Card[]
   grading: { level: GradingLevel; requireOne: boolean }
   retype: boolean
   imageSource: ImageSource
@@ -42,6 +44,7 @@ const AUTO_ADVANCE_MS = 900
 export function LearnQuestionView({
   question: q,
   card,
+  pool,
   grading,
   retype,
   imageSource,
@@ -135,6 +138,20 @@ export function LearnQuestionView({
     onFeedback(ok)
     onDone({ correct: ok, firstTry: ok })
   }
+
+  // The card a wrong answer actually belongs to, so the feedback can say what it means.
+  const wrongCard =
+    feedback?.kind !== 'wrong'
+      ? undefined
+      : q.type === 'mc'
+        ? otherCard(pool, q.choices?.[picked ?? -1]?.cardId, card.id)
+        : q.type === 'tf'
+          ? !q.isTrue && tfPicked
+            ? otherCard(pool, q.shown?.cardId, card.id)
+            : undefined
+          : feedback.response
+            ? cardForAnswer(feedback.response, q.answerSide, pool, card.id)
+            : undefined
 
   const retypeOk = !retype || feedback?.kind !== 'wrong' || !feedback.written || grade(retyped, answer, { level: 'moderate' }).correct
 
@@ -312,6 +329,14 @@ export function LearnQuestionView({
               <span className={styles.sideLabel}>Your answer</span>
               <span className={styles.yours}>
                 {isSpell ? <SpellDiff response={feedback.response} answer={answer} /> : feedback.response}
+              </span>
+            </div>
+          )}
+          {wrongCard && (
+            <div className={styles.compare} data-testid="learn-meaning">
+              <span className={styles.sideLabel}>{meaningLabel(q.answerSide, q.type === 'tf' ? 'That' : undefined)}</span>
+              <span className="pre-wrap" lang={langOf(promptSide)}>
+                {sideText(wrongCard, promptSide)}
               </span>
             </div>
           )}
