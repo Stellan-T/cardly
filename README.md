@@ -153,6 +153,43 @@ The build reads the Firebase config from the committed `.env`, so no secrets are
 to keep the config out of the repository, empty the values in `.env` and add repository secrets with
 the same names under **Settings → Secrets and variables → Actions**; secrets override `.env`.)
 
+### 1.8 Optional: turn on AI Insight (Gemini)
+
+After a wrong answer in Learn, and for every missed question on the Test results page, an
+**AI Insight** button asks Gemini why the answer was wrong, why the correct answer is right and how
+the two differ. It uses **Firebase AI Logic** with the **Gemini Developer API**, which has a free
+tier on the Spark plan. The button stays hidden until `VITE_RECAPTCHA_SITE_KEY` is set.
+
+1. **Firebase console → AI Services → AI Logic → Get started** and choose the **Gemini Developer
+   API**. Firebase enables the API and keeps the Gemini key on its side. Don't put a Gemini key in
+   the app.
+2. **Create a reCAPTCHA Enterprise key.** Google Cloud console (same project) → **Security →
+   reCAPTCHA → Create key**, type **Website**, domains `stellan-t.github.io` and `localhost`. Copy
+   the key id.
+3. **Register the web app with App Check.** Firebase console → **App Check → Apps** → your web app
+   → **reCAPTCHA Enterprise**, paste the key id and save.
+4. Put the key id in `.env` as `VITE_RECAPTCHA_SITE_KEY=…` (it's public, like the rest of `.env`),
+   commit and push.
+5. Deploy the rules again (they now allow the `insights` cache):
+   `npx firebase deploy --only firestore:rules`.
+6. Open the deployed app, get an answer wrong and press **AI Insight**. Then go to **App Check →
+   APIs → Firebase AI Logic** and click **Enforce**. Firebase requires App Check enforcement for AI
+   Logic from November 2, 2026. **Don't enforce App Check for Cloud Firestore**: the app only starts
+   App Check when AI Insight is first used, so enforcing it for Firestore would block normal
+   loading.
+7. Optional: lower the per-user request limit for the Firebase AI Logic API under **Google Cloud
+   console → IAM & Admin → Quotas** so one account can't use up the free tier.
+
+**Local development:** `npm run dev`, press AI Insight once and copy the App Check debug token that
+the browser console prints. Add it under **App Check → Apps → ⋮ → Manage debug tokens**, then put it
+in `.env.local` as `VITE_APPCHECK_DEBUG_TOKEN=…` so it stays the same. Never commit it. AI Insight is
+off with the emulators.
+
+The model is `AI_INSIGHT_MODEL` in `src/config/app.ts`. Google retires Gemini models regularly, so
+check the [supported models](https://firebase.google.com/docs/ai-logic/models) now and then.
+Explanations are cached in `users/{uid}/insights`, so repeating the same mistake doesn't call Gemini
+again.
+
 ### After the push
 
 The workflow in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) type-checks, runs the
@@ -275,6 +312,7 @@ users/{uid}/sessions/{setId}             flashcards deck/piles, learn state, per
 users/{uid}/folders/{folderId}           name, setIds
 users/{uid}/tests/{testId}               setId, scorePct, correct, total, durationMs, settings, takenAt
 users/{uid}/images/{imageId}             dataUrl (≤150 KB WebP/JPEG), width, height, bytes
+users/{uid}/insights/{key}               cached AI Insight: setId, cardId, text, model, createdAt
 publicSets/{setId}                       read-only copy of a set shared by link (+ images subcollection)
 leaderboards/{setId}/match/{uid}         displayName, bestTimeMs, achievedAt
 ```
@@ -346,7 +384,7 @@ in its own document (`users/{uid}/images/{imageId}`) so card documents stay smal
 ```
 src/
   config/app.ts          app name and identity (rename here)
-  firebase/              Firebase init (offline persistence, emulators)
+  firebase/              Firebase init (offline persistence, emulators); ai.ts: Gemini + App Check
   data/                  Firestore access: paths, mappers, sets, write-behind stores, account, …
   lib/                   pure logic + unit tests: parseImport, grade, srs, learn, progress,
                          flashcards, testGen, match, blocks, blast, questions, languages, tts, …

@@ -7,6 +7,7 @@ import { GRADE_REASON_TEXT } from '../../lib/grade'
 import { cardForAnswer, meaningLabel, otherCard, otherSide, QUESTION_TYPE_LABELS, sideText } from '../../lib/questions'
 import type { GeneratedTest, QuestionResult, TestQuestion, TestScore } from '../../lib/testGen'
 import type { Card } from '../../types'
+import { AiInsight } from '../study/AiInsight'
 import { useSpeech } from '../study/hooks'
 import { cx, langAttr, SIDE_LABEL } from './TestQuestions'
 import styles from './TestPage.module.css'
@@ -221,6 +222,23 @@ function ReviewItem({
         <p className="subtle">
           The correct {SIDE_LABEL[q.answerSide].toLowerCase()} is <span lang={answerLang}>“{q.answer}”</span>.
         </p>
+      )}
+      {r.answered && !r.correct && (
+        <div className="no-print">
+          <AiInsight
+            question={{
+              cardId: q.cardId,
+              questionType: q.type,
+              promptSide,
+              prompt: q.prompt,
+              answerSide: q.answerSide,
+              correctAnswer: q.answer,
+              userAnswer: r.response,
+              userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
+              shown: tf ? q.shown.text : undefined,
+            }}
+          />
+        </div>
       )}
       {q.type === 'written' && r.answered && !r.correct && (
         <div className="no-print">

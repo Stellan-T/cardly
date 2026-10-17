@@ -2,6 +2,7 @@ rules_version = '2';
 
 // Cardly security rules.
 //  - users/{uid}/**            only the signed-in owner can read or write
+//                              (insights: cached AI Insight explanations)
 //  - publicSets/{setId}        any signed-in user (guests too) can read;
 //                              only the owner can create/update/delete
 //  - leaderboards/{setId}/match/{uid}
@@ -76,6 +77,14 @@ service cloud.firestore {
       return str(d.dataUrl, 400000) && d.dataUrl.matches('^data:image/.*') && d.bytes is number;
     }
 
+    function validInsight(d) {
+      return str(d.setId, 64)
+        && str(d.cardId, 64)
+        && str(d.text, 5000) && d.text.size() > 0
+        && str(d.model, 100)
+        && d.createdAt is number;
+    }
+
     match /users/{uid} {
       allow read, delete: if isUser(uid);
       allow create, update: if isUser(uid) && validUser(request.resource.data);
@@ -103,6 +112,11 @@ service cloud.firestore {
       match /images/{imageId} {
         allow read, delete: if isUser(uid);
         allow create, update: if isUser(uid) && validImage(request.resource.data);
+      }
+
+      match /insights/{key} {
+        allow read, delete: if isUser(uid);
+        allow create, update: if isUser(uid) && validInsight(request.resource.data);
       }
 
       match /progress/{setId} {

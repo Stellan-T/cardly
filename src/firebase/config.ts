@@ -23,3 +23,20 @@ export const firebaseConfig: FirebaseOptions = {
 export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId)
 
 export const emulatorHost = env.VITE_EMULATOR_HOST || '127.0.0.1'
+
+/**
+ * reCAPTCHA Enterprise site key for Firebase App Check (public, like the rest
+ * of this file). AI Insight needs it: Firebase AI Logic only answers requests
+ * that carry a valid App Check token.
+ */
+export const recaptchaSiteKey = env.VITE_RECAPTCHA_SITE_KEY || undefined
+
+/**
+ * Optional App Check debug token for local development (registered under App
+ * Check → Apps → Manage debug tokens). Leave empty to have the SDK print a new
+ * one to the console on first use.
+ */
+export const appCheckDebugToken = env.VITE_APPCHECK_DEBUG_TOKEN || undefined
+
+/** AI Insight works against the real project only: the emulators have no Gemini. */
+export const isAiConfigured = isFirebaseConfigured && !useEmulators && Boolean(recaptchaSiteKey)

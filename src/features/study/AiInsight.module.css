@@ -1,0 +1,43 @@
+.trigger {
+  align-self: flex-start;
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: start;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary-soft-text);
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+.text {
+  margin: 0;
+  line-height: 1.5;
+}
+.error {
+  margin: 0;
+  flex: 1;
+  color: var(--danger-text);
+}
+.note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+}
