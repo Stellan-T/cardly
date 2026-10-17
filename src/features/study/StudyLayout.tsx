@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Dialog } from '../../components/Dialog'
 import { PageLoading } from '../../components/controls'
-import { Settings, X } from '../../components/icons'
+import { Maximize, Minimize, Settings, X } from '../../components/icons'
 import { useStudySet } from '../sets/StudySetContext'
 import { ACTIVITIES } from './activities'
-import { useTermFilter } from './hooks'
+import { exitFullscreen, useFullscreen, useTermFilter } from './hooks'
 import type { ActivityKind } from '../../types'
 
 interface StudyLayoutProps {
@@ -42,10 +42,12 @@ export function StudyLayout({
   const activity = ACTIVITIES[mode]
   const subset = useTermFilter()
   const count = availableCards ?? cards.length
+  const fullscreen = useFullscreen()
 
   const exit = async () => {
     if (confirmExit && !(await confirmExit())) return
     onExit?.()
+    exitFullscreen()
     navigate(basePath)
   }
 
@@ -97,6 +99,18 @@ export function StudyLayout({
         <span className="set-title hide-mobile">{meta.title}</span>
         <span className="spacer" />
         {headerExtra}
+        {fullscreen.supported && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon"
+            aria-label={fullscreen.active ? 'Exit full screen' : 'Full screen'}
+            aria-pressed={fullscreen.active}
+            title={fullscreen.active ? 'Exit full screen' : 'Full screen'}
+            onClick={fullscreen.toggle}
+          >
+            {fullscreen.active ? <Minimize size={20} /> : <Maximize size={20} />}
+          </button>
+        )}
         {options && (
           <button type="button" className="btn btn-ghost btn-icon" aria-label="Options" title="Options" onClick={() => setOptionsOpen(true)}>
             <Settings size={20} />

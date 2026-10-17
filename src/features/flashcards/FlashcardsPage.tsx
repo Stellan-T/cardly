@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ProgressBar, Segmented, Switch } from '../../components/controls'
 import {
@@ -7,8 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
-  Maximize,
-  Minimize,
   Pause,
   Play,
   RotateCcw,
@@ -41,7 +39,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useStudySet } from '../sets/StudySetContext'
 import { AiHint } from '../study/AiInsight'
 import { StarredOnlyOption } from '../study/CommonOptions'
-import { useModeOptions, useProgress, useSessionState, useSpeech, useStudyActivity, useStudyCards } from '../study/hooks'
+import { useFullscreen, useModeOptions, useProgress, useSessionState, useSpeech, useStudyActivity, useStudyCards } from '../study/hooks'
 import { OptionGroup, StudyLayout } from '../study/StudyLayout'
 import { Face, FlipCard } from './FlipCard'
 import styles from './Flashcards.module.css'
@@ -135,9 +133,8 @@ export default function FlashcardsPage() {
   const [enter, setEnter] = useState<'left' | 'right' | null>(null)
   const [playing, setPlaying] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[]>([])
-  const [fullscreen, setFullscreen] = useState(false)
   const [srsUndoTick, setSrsUndoTick] = useState(0)
-  const shellRef = useRef<HTMLDivElement>(null)
+  const fullscreen = useFullscreen()
   const ready = status === 'ready' && optsLoaded && !!session?.loaded
 
   // Start or resume the deck (Browse / Basic sorting).
@@ -181,15 +178,6 @@ export default function FlashcardsPage() {
     setFlipped(false)
   }, [cardId])
 
-  const toggleFullscreen = () => {
-    if (document.fullscreenElement) void document.exitFullscreen()
-    else void shellRef.current?.requestFullscreen?.().catch(() => {})
-  }
-  useEffect(() => {
-    const onChange = () => setFullscreen(!!document.fullscreenElement)
-    document.addEventListener('fullscreenchange', onChange)
-    return () => document.removeEventListener('fullscreenchange', onChange)
-  }, [])
   useEffect(() => () => stopSpeaking(), [])
 
   const record = (id: string, outcome: Outcome, extra?: Partial<TermProgress>) => {
@@ -293,7 +281,7 @@ export default function FlashcardsPage() {
           s: () => current && toggleStar(current.id),
           a: speakCurrent,
           'mod+z': undo,
-          f: toggleFullscreen,
+          f: fullscreen.toggle,
         },
     { force: ['space'] },
   )
@@ -537,54 +525,43 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div ref={shellRef} className={fullscreen ? styles.fullscreen : undefined}>
-      <StudyLayout mode="flashcards" options={options} minCards={1} availableCards={cards.length} headerExtra={headerExtra}>
-        <div className={styles.toolbar}>
-          <span className="badge badge-primary">{browseOverride ? `${METHOD_LABELS.browse} (caught up)` : METHOD_LABELS[method]}</span>
-          <span className="spacer" />
-          {effectiveMethod !== 'srs' && (
-            <>
-              <button
-                type="button"
-                className="btn btn-icon btn-ghost"
-                aria-pressed={opts.shuffle}
-                aria-label="Shuffle"
-                title="Shuffle"
-                onClick={toggleShuffle}
-              >
-                <Shuffle size={20} />
-              </button>
-              <button
-                type="button"
-                className="btn btn-icon btn-ghost"
-                aria-pressed={playing}
-                aria-label={playing ? 'Pause autoplay' : 'Autoplay'}
-                title={effectiveMethod === 'browse' ? (playing ? 'Pause' : 'Autoplay') : 'Autoplay is available in Browse cards'}
-                disabled={effectiveMethod !== 'browse'}
-                onClick={() => setPlaying((p) => !p)}
-              >
-                {playing ? <Pause size={20} /> : <Play size={20} />}
-              </button>
-            </>
-          )}
-          {effectiveMethod !== 'browse' && (
-            <button type="button" className="btn btn-icon btn-ghost" aria-label="Undo" title="Undo (Ctrl/⌘+Z)" disabled={!history.length} onClick={undo}>
-              <Undo2 size={20} />
+    <StudyLayout mode="flashcards" options={options} minCards={1} availableCards={cards.length} headerExtra={headerExtra}>
+      <div className={styles.toolbar}>
+        <span className="badge badge-primary">{browseOverride ? `${METHOD_LABELS.browse} (caught up)` : METHOD_LABELS[method]}</span>
+        <span className="spacer" />
+        {effectiveMethod !== 'srs' && (
+          <>
+            <button
+              type="button"
+              className="btn btn-icon btn-ghost"
+              aria-pressed={opts.shuffle}
+              aria-label="Shuffle"
+              title="Shuffle"
+              onClick={toggleShuffle}
+            >
+              <Shuffle size={20} />
             </button>
-          )}
-          <button
-            type="button"
-            className="btn btn-icon btn-ghost"
-            aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
-            title="Full screen (F)"
-            onClick={toggleFullscreen}
-          >
-            {fullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+            <button
+              type="button"
+              className="btn btn-icon btn-ghost"
+              aria-pressed={playing}
+              aria-label={playing ? 'Pause autoplay' : 'Autoplay'}
+              title={effectiveMethod === 'browse' ? (playing ? 'Pause' : 'Autoplay') : 'Autoplay is available in Browse cards'}
+              disabled={effectiveMethod !== 'browse'}
+              onClick={() => setPlaying((p) => !p)}
+            >
+              {playing ? <Pause size={20} /> : <Play size={20} />}
+            </button>
+          </>
+        )}
+        {effectiveMethod !== 'browse' && (
+          <button type="button" className="btn btn-icon btn-ghost" aria-label="Undo" title="Undo (Ctrl/⌘+Z)" disabled={!history.length} onClick={undo}>
+            <Undo2 size={20} />
           </button>
-        </div>
-        {body}
-      </StudyLayout>
-    </div>
+        )}
+      </div>
+      {body}
+    </StudyLayout>
   )
 }
 

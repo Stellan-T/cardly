@@ -1,5 +1,5 @@
 /** Hooks shared by every study activity. */
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { touchStudied } from '../../data/sets'
 import { useProgressState, useStoreState } from '../../data/studyStores'
@@ -151,4 +151,28 @@ export function useStudyActivity(kind: ActivityKind) {
   }, [uid, progress, profile.streak, isPublic, setId, kind])
 
   return { markStudied }
+}
+
+/**
+ * Browser full screen for the whole page (so dialogs and toasts still show).
+ * `supported` is false where the Fullscreen API is missing, e.g. iPhone Safari.
+ */
+export function useFullscreen() {
+  const supported = typeof document !== 'undefined' && !!document.fullscreenEnabled
+  const [active, setActive] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement)
+  useEffect(() => {
+    const onChange = () => setActive(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+  const toggle = useCallback(() => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+    else void document.documentElement.requestFullscreen?.().catch(() => {})
+  }, [])
+  return { supported, active, toggle }
+}
+
+/** Leaves full screen, if on (e.g. when leaving a study activity). */
+export function exitFullscreen() {
+  if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
 }
