@@ -187,3 +187,20 @@ describe('LearnQuestionView Ask AI after a correct answer', () => {
     expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
   })
 })
+
+describe('LearnQuestionView Ask AI after "Don’t know?"', () => {
+  it('still offers Ask AI (only) when no answer was given', () => {
+    renderView({ qid: 4, cardId: asked.id, type: 'written', answerSide: 'definition' }, asked)
+    fireEvent.click(screen.getByRole('button', { name: /Don.t know/ }))
+    const box = screen.getByRole('alert')
+    expect(box).toHaveTextContent('Here’s the answer')
+    expect(within(box).getByTestId('ask-only')).toBeInTheDocument()
+  })
+
+  it('offers AI Insight and Ask AI after a wrong typed answer', () => {
+    renderView({ qid: 5, cardId: asked.id, type: 'written', answerSide: 'term' }, asked)
+    fireEvent.change(screen.getByTestId('learn-input'), { target: { value: 'something else entirely' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }))
+    expect(within(screen.getByRole('alert')).getByTestId('insight')).toHaveTextContent('something else entirely')
+  })
+})
