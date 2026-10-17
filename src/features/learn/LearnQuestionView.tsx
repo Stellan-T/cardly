@@ -41,7 +41,7 @@ type Feedback =
 
 const AUTO_ADVANCE_MS = 900
 /** With AI help available, long enough to press "Ask AI" before moving on. */
-const AUTO_ADVANCE_WITH_AI_MS = 2000
+const AUTO_ADVANCE_WITH_AI_MS = 5000
 
 const NEAR_MISS_HEAD: Partial<Record<GradeReason, string>> = {
   accent: 'Correct! Mind the accents, though.',

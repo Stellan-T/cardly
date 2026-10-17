@@ -165,11 +165,11 @@ describe('LearnQuestionView Ask AI after a correct answer', () => {
     expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
   })
 
-  it('with AI, offers Ask AI and waits 2 s before moving on', () => {
+  it('with AI, offers Ask AI and waits 5 s before moving on', () => {
     ai.available = true
     const { onDone } = mcCorrect()
     expect(screen.getByTestId('learn-ask-ai')).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(1500))
+    act(() => vi.advanceTimersByTime(4500))
     expect(onDone).not.toHaveBeenCalled()
     act(() => vi.advanceTimersByTime(600))
     expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
