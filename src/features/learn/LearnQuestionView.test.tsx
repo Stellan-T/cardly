@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LearnQuestion } from '../../lib/learn'
 import type { Card } from '../../types'
 import { LearnQuestionView } from './LearnQuestionView'
@@ -12,7 +12,7 @@ const card = (id: string, term: string, definition: string): Card => ({ id, term
 const asked = card('c1', 'Digital-physical tensions', 'Combining digital and physical parts creates tensions')
 const other = card('c2', 'Socio-technical perspective', 'Technology and society shape each other')
 
-function setup(isTrue: boolean) {
+function setupTf(isTrue: boolean) {
   const question: LearnQuestion = {
     qid: 1,
     cardId: asked.id,
@@ -21,13 +21,17 @@ function setup(isTrue: boolean) {
     shown: isTrue ? { cardId: asked.id, text: asked.term } : { cardId: other.id, text: other.term },
     isTrue,
   }
+  return renderView(question, asked)
+}
+
+function renderView(question: LearnQuestion, asked: Card, level: 'strict' | 'moderate' | 'relaxed' = 'moderate') {
   const onDone = vi.fn()
   render(
     <LearnQuestionView
       question={question}
       card={asked}
       pool={[asked, other]}
-      grading={{ level: 'moderate', requireOne: false }}
+      grading={{ level, requireOne: false }}
       retype={false}
       imageSource={{ ownerUid: 'u1' }}
       langOf={() => 'en'}
@@ -44,7 +48,7 @@ function setup(isTrue: boolean) {
 
 describe('LearnQuestionView true/false feedback', () => {
   it('explains a false pairing both ways after a correct "False"', () => {
-    const { onDone } = setup(false)
+    const { onDone } = setupTf(false)
     fireEvent.click(screen.getByRole('button', { name: /False/ }))
     const box = screen.getByRole('status')
     expect(box).toHaveTextContent('Correct! These don’t match.')
@@ -56,7 +60,7 @@ describe('LearnQuestionView true/false feedback', () => {
   })
 
   it('shows the same explanation, without "Your answer: True", after a wrong "True"', () => {
-    setup(false)
+    setupTf(false)
     fireEvent.click(screen.getByRole('button', { name: /True/ }))
     const box = screen.getByRole('alert')
     expect(box).toHaveTextContent('Not quite — these don’t match.')
@@ -66,11 +70,57 @@ describe('LearnQuestionView true/false feedback', () => {
   })
 
   it('names the right term after a wrong "False" on a true pairing', () => {
-    setup(true)
+    setupTf(true)
     fireEvent.click(screen.getByRole('button', { name: /False/ }))
     const box = screen.getByRole('alert')
     expect(box).toHaveTextContent('Not quite — these do match.')
     expect(box).toHaveTextContent('The right term')
     expect(box).toHaveTextContent('Digital-physical tensions')
+  })
+})
+
+describe('LearnQuestionView near-miss written answers', () => {
+  afterEach(() => vi.useRealTimers())
+
+  const written = (answer: string, level: 'moderate' | 'relaxed' = 'moderate') => {
+    vi.useFakeTimers()
+    const card = { ...asked, term: answer }
+    const view = renderView({ qid: 2, cardId: card.id, type: 'written', answerSide: 'term' }, card, level)
+    return { ...view, type: (text: string) => {
+      fireEvent.change(screen.getByTestId('learn-input'), { target: { value: text } })
+      fireEvent.click(screen.getByRole('button', { name: 'Answer' }))
+    } }
+  }
+
+  it('counts a typo as correct but waits, showing the exact wording', () => {
+    const { type, onDone } = written('photosynthesis')
+    type('fotosynthesis')
+    const box = screen.getByTestId('learn-near-miss')
+    expect(box).toHaveTextContent('Mind the spelling')
+    expect(within(box).getByText('Exact wording').nextSibling).toHaveTextContent('photosynthesis')
+    act(() => vi.advanceTimersByTime(5000))
+    expect(onDone).not.toHaveBeenCalled()
+    fireEvent.click(within(box).getByTestId('learn-continue'))
+    expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
+  })
+
+  it('also waits when only the accents differ', () => {
+    written('café').type('cafe')
+    expect(screen.getByTestId('learn-near-miss')).toHaveTextContent('Mind the accents')
+  })
+
+  it('also waits when the key words are right but rearranged (relaxed grading)', () => {
+    written('the making of glucose', 'relaxed').type('glucose making')
+    const box = screen.getByTestId('learn-near-miss')
+    expect(box).toHaveTextContent('The exact wording is a little different.')
+    expect(within(box).getByText('Your answer').nextSibling).toHaveTextContent('glucose making')
+  })
+
+  it('still moves on by itself after an exact answer', () => {
+    const { type, onDone } = written('photosynthesis')
+    type('Photosynthesis')
+    expect(screen.queryByTestId('learn-near-miss')).toBeNull()
+    act(() => vi.advanceTimersByTime(1000))
+    expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
   })
 })

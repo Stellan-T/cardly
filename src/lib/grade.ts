@@ -298,6 +298,14 @@ export function grade(response: string, answer: string, options: GradeOptions): 
   return { correct: false, reason: 'wrong', level }
 }
 
+/**
+ * Accepted answers that aren't quite the card's wording (accents, a typo, a
+ * rephrasing). They count as correct, but Learn pauses to show the exact
+ * wording, since a small slip can hide a slightly wrong idea. Giving one of
+ * several listed answers ('one-of') is fully right and isn't one of these.
+ */
+export const NEAR_MISS_REASONS: ReadonlySet<GradeReason> = new Set(['accent', 'typo', 'meaning'])
+
 export const GRADE_REASON_TEXT: Record<GradeReason, string> = {
   exact: 'Correct',
   format: 'Correct',

@@ -4,7 +4,7 @@
  * Pure functions; the network side lives in data/insights.ts.
  */
 import type { Side } from '../types'
-import { baseNormalize } from './grade'
+import { baseNormalize, type GradeReason } from './grade'
 import { languageName } from './languages'
 
 export interface InsightRequest {
@@ -23,6 +23,8 @@ export interface InsightRequest {
   userAnswerMeaning?: string
   /** True/false only: the answer shown next to the prompt. */
   shown?: string
+  /** Set when the answer was accepted as correct but isn't the card's exact wording: how it differed. */
+  accepted?: GradeReason
   promptLang: string
   answerLang: string
 }
@@ -33,6 +35,12 @@ const MAX_FIELD = 1500
 const clip = (s: string) => (s.length > MAX_FIELD ? `${s.slice(0, MAX_FIELD)}…` : s)
 
 const SIDE_NAME: Record<Side, string> = { term: 'Term', definition: 'Definition' }
+
+const ACCEPTED_AS: Partial<Record<GradeReason, string>> = {
+  accent: 'accents ignored',
+  typo: 'small typo ignored',
+  meaning: 'same key words, different wording',
+}
 
 const QUESTION_NAME: Record<string, string> = {
   mc: 'multiple choice',
@@ -62,6 +70,9 @@ export function buildInsightPrompt(r: InsightRequest): string {
       `Correct ${SIDE_NAME[r.answerSide].toLowerCase()}${lang(r.answerLang)}: ${clip(r.correctAnswer)}`,
       `Student's answer: ${clip(r.userAnswer)}`,
     )
+  }
+  if (r.accepted) {
+    lines.push(`The app accepted this answer as correct (${ACCEPTED_AS[r.accepted] ?? 'close enough'}), but it is not the exact wording.`)
   }
   if (r.userAnswerMeaning) {
     lines.push(`In this set, the student's answer belongs to: ${clip(r.userAnswerMeaning)}`)
@@ -127,7 +138,8 @@ export const hintKey = (r: HintRequest) => shortHash(['hint', r.setId, r.cardId,
 /**
  * Cache key for an explanation: the same card, direction and (normalised)
  * answer reuse one explanation, so repeating a mistake costs nothing.
+ * "Normalised" keeps accents, so an accent slip gets its own explanation.
  */
 export function insightKey(r: InsightRequest): Promise<string> {
-  return shortHash([r.setId, r.cardId, r.answerSide, r.correctAnswer, r.shown ?? '', baseNormalize(r.userAnswer)])
+  return shortHash([r.setId, r.cardId, r.answerSide, r.correctAnswer, r.shown ?? '', baseNormalize(r.userAnswer), r.accepted ?? ''])
 }
