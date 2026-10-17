@@ -10,7 +10,7 @@ export const THEME_COLOR = '#0d7a6f'
 export const THEME_COLOR_DARK = '#0f1716'
 
 /**
- * Gemini model behind AI Insight (Firebase AI Logic). Gemini models are retired
+ * Gemini model behind AI Insight and AI Hint (Firebase AI Logic). Gemini models are retired
  * regularly; see https://firebase.google.com/docs/ai-logic/models and bump this.
  */
-export const AI_INSIGHT_MODEL = 'gemini-3.5-flash-lite'
+export const AI_MODEL = 'gemini-3.5-flash-lite'

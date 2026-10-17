@@ -8,7 +8,7 @@ import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../
 import { ttsSupported } from '../../lib/tts'
 import type { Card, GradingLevel, Side } from '../../types'
 import type { ImageSource } from '../../data/images'
-import { AiInsight } from '../study/AiInsight'
+import { AiHint, AiInsight } from '../study/AiInsight'
 import styles from './Learn.module.css'
 
 export interface Verdict {
@@ -180,6 +180,40 @@ export function LearnQuestionView({
     { force: ['space'] },
   )
 
+  // A false true/false pairing, explained both ways: the right answer for this
+  // prompt, and what the shown answer belongs to instead.
+  const shownText = q.shown?.text ?? ''
+  const tfPairs = q.type === 'tf' && wrongCard && (
+    <dl className={styles.pairs}>
+      <div className={styles.pair}>
+        <dt className={styles.pairLabel}>
+          {q.answerSide === 'term' ? 'The term for this definition' : 'The definition of this term'}
+        </dt>
+        <dd className={`${styles.right} pre-wrap`} lang={langOf(q.answerSide)}>
+          {answer}
+        </dd>
+      </div>
+      <div className={styles.pair} data-testid="learn-meaning">
+        <dt className={styles.pairLabel}>
+          {q.answerSide === 'term' ? (
+            shownText.length <= 60 ? (
+              <>
+                <span lang={langOf(q.answerSide)}>“{shownText}”</span> means
+              </>
+            ) : (
+              'The shown term means'
+            )
+          ) : (
+            'The shown definition belongs to'
+          )}
+        </dt>
+        <dd className="pre-wrap" lang={langOf(promptSide)}>
+          {sideText(wrongCard, promptSide)}
+        </dd>
+      </div>
+    </dl>
+  )
+
   const promptBlock = (
     <div className={styles.prompt}>
       <div className={styles.promptHead}>
@@ -209,6 +243,15 @@ export function LearnQuestionView({
   return (
     <div className={styles.question} data-testid={`learn-q-${q.type}`} data-qid={q.qid}>
       {promptBlock}
+
+      {!isSpell && (
+        <AiHint
+          question={{ cardId: card.id, promptSide, prompt, answerSide: q.answerSide, answer }}
+          hideButton={!!feedback || revealed}
+          // A hinted answer isn't a first-try answer, just like peeking.
+          onUse={() => setPeeked(true)}
+        />
+      )}
 
       {q.type === 'mc' && q.choices && (
         <div className={styles.answers}>
@@ -326,16 +369,11 @@ export function LearnQuestionView({
         </div>
       )}
       {holdCorrect && wrongCard && (
-        <div className={`${styles.feedback} ${styles.good}`} role="status">
-          <div className={styles.feedbackHead}>
-            <Check size={20} /> {feedback.text ?? 'Correct!'}
+        <div className={`${styles.feedback} ${styles.goodDetail}`} role="status">
+          <div className={`${styles.feedbackHead} ${styles.feedbackHeadGood}`}>
+            <Check size={20} /> {feedback.text ?? 'Correct! These don’t match.'}
           </div>
-          <div className={styles.compare} data-testid="learn-meaning">
-            <span className={styles.sideLabel}>{meaningLabel(q.answerSide, 'That')}</span>
-            <span className="pre-wrap" lang={langOf(promptSide)}>
-              {sideText(wrongCard, promptSide)}
-            </span>
-          </div>
+          {tfPairs}
           <div className="row">
             <span className="spacer" />
             <button
@@ -353,9 +391,16 @@ export function LearnQuestionView({
       {feedback?.kind === 'wrong' && (
         <div className={`${styles.feedback} ${styles.bad}`} role="alert">
           <div className={styles.feedbackHead}>
-            <X size={20} /> {feedback.response === undefined ? 'Here’s the answer — you’ll see it again soon.' : 'Not quite — you’re still learning this one.'}
+            <X size={20} />{' '}
+            {feedback.response === undefined
+              ? 'Here’s the answer — you’ll see it again soon.'
+              : q.type === 'tf'
+                ? q.isTrue
+                  ? 'Not quite — these do match.'
+                  : 'Not quite — these don’t match.'
+                : 'Not quite — you’re still learning this one.'}
           </div>
-          {feedback.response !== undefined && (
+          {feedback.response !== undefined && q.type !== 'tf' && (
             <div className={styles.compare}>
               <span className={styles.sideLabel}>Your answer</span>
               <span className={styles.yours}>
@@ -363,20 +408,26 @@ export function LearnQuestionView({
               </span>
             </div>
           )}
-          {wrongCard && (
-            <div className={styles.compare} data-testid="learn-meaning">
-              <span className={styles.sideLabel}>{meaningLabel(q.answerSide, q.type === 'tf' ? 'That' : undefined)}</span>
-              <span className="pre-wrap" lang={langOf(promptSide)}>
-                {sideText(wrongCard, promptSide)}
-              </span>
-            </div>
+          {q.type === 'tf' && wrongCard ? (
+            tfPairs
+          ) : (
+            <>
+              {wrongCard && (
+                <div className={styles.compare} data-testid="learn-meaning">
+                  <span className={styles.sideLabel}>{meaningLabel(q.answerSide)}</span>
+                  <span className="pre-wrap" lang={langOf(promptSide)}>
+                    {sideText(wrongCard, promptSide)}
+                  </span>
+                </div>
+              )}
+              <div className={styles.compare}>
+                <span className={styles.sideLabel}>{q.type === 'tf' ? `The right ${q.answerSide}` : 'Correct answer'}</span>
+                <span className={`${styles.right} pre-wrap`} lang={langOf(q.answerSide)}>
+                  {answer}
+                </span>
+              </div>
+            </>
           )}
-          <div className={styles.compare}>
-            <span className={styles.sideLabel}>Correct answer</span>
-            <span className={`${styles.right} pre-wrap`} lang={langOf(q.answerSide)}>
-              {answer}
-            </span>
-          </div>
           {feedback.response !== undefined && (
             <AiInsight
               question={{

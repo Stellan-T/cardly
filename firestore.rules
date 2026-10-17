@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Cardly security rules.
 //  - users/{uid}/**            only the signed-in owner can read or write
-//                              (insights: cached AI Insight explanations)
+//                              (insights: cached AI Insights and AI Hints)
 //  - publicSets/{setId}        any signed-in user (guests too) can read;
 //                              only the owner can create/update/delete
 //  - leaderboards/{setId}/match/{uid}
@@ -82,7 +82,8 @@ service cloud.firestore {
         && str(d.cardId, 64)
         && str(d.text, 5000) && d.text.size() > 0
         && str(d.model, 100)
-        && d.createdAt is number;
+        && d.createdAt is number
+        && (!('kind' in d) || d.kind in ['insight', 'hint']);
     }
 
     match /users/{uid} {
