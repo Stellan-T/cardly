@@ -18,7 +18,7 @@
       try {
         var t = localStorage.getItem('%STORAGE_PREFIX%.theme') || 'system'
         var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        document.documentElement.dataset.theme = t === 'pink' ? 'pink' : dark ? 'dark' : 'light'
         if (localStorage.getItem('%STORAGE_PREFIX%.reducedMotion') === 'true') document.documentElement.dataset.reducedMotion = 'true'
       } catch (e) {}
     </script>

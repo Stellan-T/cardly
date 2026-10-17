@@ -79,13 +79,32 @@ export function LearnQuestionView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q.qid])
 
+  // The card a wrong answer actually belongs to, so the feedback can say what it means.
+  // A false true/false pairing always gets one, right or wrong: the shown side is another card's.
+  const wrongCard = !feedback
+    ? undefined
+    : q.type === 'tf'
+      ? q.isTrue
+        ? undefined
+        : otherCard(pool, q.shown?.cardId, card.id)
+      : feedback.kind !== 'wrong'
+        ? undefined
+        : q.type === 'mc'
+          ? otherCard(pool, q.choices?.[picked ?? -1]?.cardId, card.id)
+          : feedback.response
+            ? cardForAnswer(feedback.response, q.answerSide, pool, card.id)
+            : undefined
+  // A correct answer that comes with a meaning to read waits for Continue.
+  const holdCorrect = feedback?.kind === 'correct' && !!wrongCard
+
   useEffect(() => {
-    if (feedback?.kind === 'wrong') continueRef.current?.focus()
+    if (feedback?.kind === 'wrong' || holdCorrect) continueRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback])
 
   // Correct answers move on by themselves.
   useEffect(() => {
-    if (feedback?.kind !== 'correct') return
+    if (feedback?.kind !== 'correct' || holdCorrect) return
     const t = setTimeout(() => onDone({ correct: true, firstTry: !peeked }), AUTO_ADVANCE_MS)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,20 +158,6 @@ export function LearnQuestionView({
     onFeedback(ok)
     onDone({ correct: ok, firstTry: ok })
   }
-
-  // The card a wrong answer actually belongs to, so the feedback can say what it means.
-  const wrongCard =
-    feedback?.kind !== 'wrong'
-      ? undefined
-      : q.type === 'mc'
-        ? otherCard(pool, q.choices?.[picked ?? -1]?.cardId, card.id)
-        : q.type === 'tf'
-          ? !q.isTrue && tfPicked
-            ? otherCard(pool, q.shown?.cardId, card.id)
-            : undefined
-          : feedback.response
-            ? cardForAnswer(feedback.response, q.answerSide, pool, card.id)
-            : undefined
 
   const retypeOk = !retype || feedback?.kind !== 'wrong' || !feedback.written || grade(retyped, answer, { level: 'moderate' }).correct
 
@@ -315,9 +320,34 @@ export function LearnQuestionView({
         </div>
       )}
 
-      {feedback?.kind === 'correct' && (
+      {feedback?.kind === 'correct' && !holdCorrect && (
         <div className={`${styles.feedback} ${styles.good}`} role="status">
           <Check size={20} /> {feedback.text ?? 'Correct!'}
+        </div>
+      )}
+      {holdCorrect && wrongCard && (
+        <div className={`${styles.feedback} ${styles.good}`} role="status">
+          <div className={styles.feedbackHead}>
+            <Check size={20} /> {feedback.text ?? 'Correct!'}
+          </div>
+          <div className={styles.compare} data-testid="learn-meaning">
+            <span className={styles.sideLabel}>{meaningLabel(q.answerSide, 'That')}</span>
+            <span className="pre-wrap" lang={langOf(promptSide)}>
+              {sideText(wrongCard, promptSide)}
+            </span>
+          </div>
+          <div className="row">
+            <span className="spacer" />
+            <button
+              ref={continueRef}
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onDone({ correct: true, firstTry: !peeked })}
+              data-testid="learn-continue"
+            >
+              Continue <kbd>Enter</kbd>
+            </button>
+          </div>
         </div>
       )}
       {feedback?.kind === 'wrong' && (

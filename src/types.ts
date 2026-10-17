@@ -10,7 +10,7 @@ export type Side = 'term' | 'definition'
 export type AnswerWith = 'term' | 'definition' | 'both'
 export type GradingLevel = 'strict' | 'moderate' | 'relaxed'
 export type FlashcardMethod = 'browse' | 'sort' | 'srs'
-export type ThemePref = 'light' | 'dark' | 'system'
+export type ThemePref = 'light' | 'dark' | 'system' | 'pink'
 export type ActivityKind = 'flashcards' | 'learn' | 'test' | 'match' | 'blocks' | 'blast'
 
 export interface Card {

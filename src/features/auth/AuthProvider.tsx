@@ -47,8 +47,12 @@ export function useUid(): string {
 
 function applyTheme(theme: ThemePref) {
   const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  document.documentElement.dataset.theme = theme === 'pink' ? 'pink' : dark ? 'dark' : 'light'
 }
+
+/** The app logo; the pink theme has its own. Read at render, after the theme is applied. */
+export const logoSrc = () =>
+  `${import.meta.env.BASE_URL}${document.documentElement.dataset.theme === 'pink' ? 'logo-pink.svg' : 'logo.svg'}`
 
 export function setThemePreference(theme: ThemePref) {
   try {

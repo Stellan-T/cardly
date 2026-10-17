@@ -3,7 +3,7 @@ import { Brain, ClipboardCheck, FileText, Layers, RefreshCw } from '../../compon
 import { isFirebaseConfigured } from '../../firebase/config'
 import { AuthPanel } from './AuthPanel'
 import { authErrorMessage } from './actions'
-import { useAuth } from './AuthProvider'
+import { logoSrc, useAuth } from './AuthProvider'
 import styles from './SignInPage.module.css'
 
 const FEATURES = [
@@ -20,7 +20,7 @@ export default function SignInPage() {
       <main className={styles.main} id="main">
         <section className={styles.hero}>
           <div className="brand" style={{ fontSize: '1.4rem' }}>
-            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={36} height={36} />
+            <img src={logoSrc()} alt="" width={36} height={36} />
             {APP_NAME}
           </div>
           <h1 className={styles.title}>Study smarter from the notes you already have.</h1>

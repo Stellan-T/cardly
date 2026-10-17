@@ -182,6 +182,7 @@ export default function SettingsPage() {
               { value: 'light', label: 'Light' },
               { value: 'dark', label: 'Dark' },
               { value: 'system', label: 'System' },
+              { value: 'pink', label: 'Pink' },
             ]}
           />
         </div>

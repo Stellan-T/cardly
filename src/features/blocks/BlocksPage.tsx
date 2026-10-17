@@ -226,8 +226,10 @@ export default function BlocksPage() {
     const correctText = sideText(q.card, q.answerSide)
     if (a.correct) {
       playSound('correct')
-      setLive(`Correct! ${exactish(a.reason) ? '' : `The answer is ${correctText}. `}Here come 3 new pieces.`)
-      later(dealNext, exactish(a.reason) ? 900 : 1800)
+      // A false true/false pairing also says what the shown side means: leave time to read it.
+      const meaning = meaningSentence(q, a, allCards)
+      setLive(`Correct! ${exactish(a.reason) ? '' : `The answer is ${correctText}. `}${meaning ? `${meaning} ` : ''}Here come 3 new pieces.`)
+      later(dealNext, meaning ? 2600 : exactish(a.reason) ? 900 : 1800)
     } else {
       playSound('incorrect')
       setLive(`Not quite. The ${q.answerSide} is ${correctText}. ${meaningSentence(q, a, allCards)}`.trim())
