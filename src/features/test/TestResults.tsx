@@ -227,24 +227,25 @@ function ReviewItem({
           The correct {SIDE_LABEL[q.answerSide].toLowerCase()} is <span lang={answerLang}>“{q.answer}”</span>.
         </p>
       )}
-      {r.answered && (!r.correct || nearMiss) && (
-        <div className="no-print">
-          <AiInsight
-            question={{
-              cardId: q.cardId,
-              questionType: q.type,
-              promptSide,
-              prompt: q.prompt,
-              answerSide: q.answerSide,
-              correctAnswer: q.answer,
-              userAnswer: r.response,
-              userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
-              shown: tf ? q.shown.text : undefined,
-              accepted: nearMiss && r.reason ? r.reason : undefined,
-            }}
-          />
-        </div>
-      )}
+      {/* Ask AI on every question; AI Insight only where there's a mistake to explain. */}
+      <div className="no-print">
+        <AiInsight
+          askOnly={!r.answered || (r.correct && !nearMiss)}
+          question={{
+            cardId: q.cardId,
+            questionType: q.type,
+            promptSide,
+            prompt: q.prompt,
+            answerSide: q.answerSide,
+            correctAnswer: q.answer,
+            userAnswer: r.response,
+            userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
+            shown: tf ? q.shown.text : undefined,
+            accepted: nearMiss && r.reason ? r.reason : undefined,
+            correct: r.correct,
+          }}
+        />
+      </div>
       {q.type === 'written' && r.answered && !r.correct && (
         <div className="no-print">
           <button type="button" className="btn btn-sm" onClick={() => onOverride(q)}>

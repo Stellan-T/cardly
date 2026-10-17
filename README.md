@@ -158,9 +158,11 @@ the same names under **Settings → Secrets and variables → Actions**; secrets
 - **AI Insight:** after a wrong answer in Learn, and for every missed question on the Test results
   page, Gemini explains why the answer was wrong, why the correct answer is right and how the two
   differ.
-- **Ask AI:** next to AI Insight (in Learn, Test results and Blocks), a short chat about that
-  question: ask things like "So if X, then Y? Or am I getting it wrong?" and Gemini answers with
-  the card in mind. Up to 10 questions per answer; conversations aren't stored.
+- **Ask AI:** after every answer in Learn, Test results and Blocks (right or wrong), a short chat
+  about that question: ask things like "So if X, then Y? Or am I getting it wrong?" or "Can you
+  give an example?" and Gemini answers with the card in mind. After a correct answer in Learn the
+  app waits 2 seconds (instead of 0.9) so there's time to press Ask AI; Enter still moves on at
+  once. Up to 10 questions per answer; conversations aren't stored.
 - **AI Hint:** before you answer in Learn, or before you flip a card in Flashcards, Gemini gives a
   hint (an example sentence with a blank, a context or a memory hook) without revealing the answer.
   Any word of the answer that slips into the hint is replaced with `___`. In Learn, a correct answer

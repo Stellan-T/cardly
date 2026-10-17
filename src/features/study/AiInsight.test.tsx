@@ -89,3 +89,17 @@ describe('AiInsight: Ask AI', () => {
     expect(askFollowUp).not.toHaveBeenCalled()
   })
 })
+
+describe('AiInsight: after a correct answer', () => {
+  it('offers only Ask AI', () => {
+    render(<AiInsight question={question} askOnly />)
+    expect(screen.queryByTestId('ai-insight')).toBeNull()
+    expect(screen.getByTestId('ai-ask')).toBeInTheDocument()
+  })
+
+  it('can open straight into the chat, focused', () => {
+    render(<AiInsight question={question} askOnly startInChat />)
+    expect(screen.getByTestId('ai-ask-input')).toHaveFocus()
+    expect(screen.queryByText('Explain my mistake')).toBeNull()
+  })
+})

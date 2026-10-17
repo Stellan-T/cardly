@@ -26,6 +26,8 @@ export interface InsightRequest {
   shown?: string
   /** Set when the answer was accepted as correct but isn't the card's exact wording: how it differed. */
   accepted?: GradeReason
+  /** The answer was right (Ask AI after a correct answer: going deeper, not fixing a mistake). */
+  correct?: boolean
   promptLang: string
   answerLang: string
 }
@@ -69,9 +71,10 @@ export function buildInsightPrompt(r: InsightRequest): string {
   } else {
     lines.push(
       `Correct ${SIDE_NAME[r.answerSide].toLowerCase()}${lang(r.answerLang)}: ${clip(r.correctAnswer)}`,
-      `Student's answer: ${clip(r.userAnswer)}`,
+      r.userAnswer.trim() ? `Student's answer: ${clip(r.userAnswer)}` : "Student's answer: none (they looked at the answer)",
     )
   }
+  if (r.correct && !r.accepted) lines.push("The student's answer was correct.")
   if (r.accepted) {
     lines.push(`The app accepted this answer as correct (${ACCEPTED_AS[r.accepted] ?? 'close enough'}), but it is not the exact wording.`)
   }

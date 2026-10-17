@@ -83,20 +83,41 @@ function ErrorRow({ kind, onRetry }: { kind: InsightErrorKind; onRetry: () => vo
   )
 }
 
+/** Whether AI help can be offered at all: configured, and someone is signed in. */
+export function useAiAvailable(): boolean {
+  const { uid } = useAuth()
+  return isAiConfigured && !!uid
+}
+
 /**
- * After a wrong (or nearly right) answer: "AI Insight" explains it, "Ask AI"
- * opens a short chat about it. The chat also follows an Insight.
+ * After an answer: "AI Insight" explains a wrong (or nearly right) one, "Ask
+ * AI" opens a short chat about it. The chat also follows an Insight. After a
+ * correct answer (`askOnly`) there's no mistake to explain, only the chat.
  */
-export function AiInsight({ question }: { question: InsightQuestion }) {
+export function AiInsight({
+  question,
+  askOnly = false,
+  startInChat = false,
+}: {
+  question: InsightQuestion
+  /** Only offer Ask AI (after a correct answer). */
+  askOnly?: boolean
+  /** Open with the chat already showing and focused. */
+  startInChat?: boolean
+}) {
   const { uid } = useAuth()
   const { setId, meta } = useStudySet()
   const run = useStreamer()
   const [insight, setInsight] = useState<State>({ status: 'idle' })
-  const [chatOpen, setChatOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(startInChat)
   const [turns, setTurns] = useState<ChatTurn[]>([])
   const [reply, setReply] = useState<State>({ status: 'idle' })
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (startInChat) inputRef.current?.focus()
+  }, [startInChat])
 
   if (!isAiConfigured || !uid) return null
   const req = withSet(question, setId, meta)
@@ -136,10 +157,12 @@ export function AiInsight({ question }: { question: InsightQuestion }) {
   if (insight.status === 'idle' && !chatOpen) {
     return (
       <div className={styles.triggers}>
-        <button type="button" className="btn btn-soft btn-sm" onClick={explain} data-testid="ai-insight">
-          <Sparkles size={16} aria-hidden />
-          AI Insight
-        </button>
+        {!askOnly && (
+          <button type="button" className="btn btn-soft btn-sm" onClick={explain} data-testid="ai-insight">
+            <Sparkles size={16} aria-hidden />
+            AI Insight
+          </button>
+        )}
         <button type="button" className="btn btn-soft btn-sm" onClick={openChat} data-testid="ai-ask">
           <MessagesSquare size={16} aria-hidden />
           Ask AI
@@ -196,7 +219,13 @@ export function AiInsight({ question }: { question: InsightQuestion }) {
                 className={`input ${styles.askInput}`}
                 rows={2}
                 maxLength={MAX_CHAT_QUESTION}
-                placeholder={turns.length ? 'Ask another question…' : 'E.g. “So if …, then …? Or am I getting it wrong?”'}
+                placeholder={
+                  turns.length
+                    ? 'Ask another question…'
+                    : askOnly
+                      ? 'E.g. “Can you give an example?” or “How is this different from …?”'
+                      : 'E.g. “So if …, then …? Or am I getting it wrong?”'
+                }
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -216,7 +245,7 @@ export function AiInsight({ question }: { question: InsightQuestion }) {
       )}
 
       {showNote && <p className={styles.note}>{AI_NOTE}</p>}
-      {insight.status === 'idle' && (
+      {insight.status === 'idle' && !askOnly && (
         <div>
           <button type="button" className="btn btn-ghost btn-sm" onClick={explain} disabled={busy}>
             <Sparkles size={14} aria-hidden />

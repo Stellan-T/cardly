@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useHotkeys } from '../../components/hotkeys'
-import { Check, Volume2, X } from '../../components/icons'
+import { Check, MessagesSquare, Volume2, X } from '../../components/icons'
 import { AudioButton, CardImage, StarButton } from '../../components/StudyButtons'
 import { grade, GRADE_REASON_TEXT, letterDiff, NEAR_MISS_REASONS, type GradeReason, type GradeResult } from '../../lib/grade'
 import type { LearnQuestion } from '../../lib/learn'
@@ -8,7 +8,7 @@ import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../
 import { ttsSupported } from '../../lib/tts'
 import type { Card, GradingLevel, Side } from '../../types'
 import type { ImageSource } from '../../data/images'
-import { AiHint, AiInsight } from '../study/AiInsight'
+import { AiHint, AiInsight, useAiAvailable, type InsightQuestion } from '../study/AiInsight'
 import styles from './Learn.module.css'
 
 export interface Verdict {
@@ -40,6 +40,8 @@ type Feedback =
   | { kind: 'wrong'; response?: string; written: boolean; result?: GradeResult }
 
 const AUTO_ADVANCE_MS = 900
+/** With AI help available, long enough to press "Ask AI" before moving on. */
+const AUTO_ADVANCE_WITH_AI_MS = 2000
 
 const NEAR_MISS_HEAD: Partial<Record<GradeReason, string>> = {
   accent: 'Correct! Mind the accents, though.',
@@ -103,7 +105,11 @@ export function LearnQuestionView({
   // A correct answer that comes with something to read (a meaning, or the exact
   // wording of a near miss) waits for Continue.
   const nearMiss = feedback?.kind === 'correct' ? feedback.nearMiss : undefined
-  const holdCorrect = feedback?.kind === 'correct' && (!!wrongCard || !!nearMiss)
+  const aiAvailable = useAiAvailable()
+  // "Ask AI" pressed on a correct answer: stay on it and chat.
+  const [asking, setAsking] = useState(false)
+  const holdCorrect = feedback?.kind === 'correct' && (!!wrongCard || !!nearMiss || asking)
+  const advanceMs = aiAvailable ? AUTO_ADVANCE_WITH_AI_MS : AUTO_ADVANCE_MS
 
   useEffect(() => {
     if (feedback?.kind === 'wrong' || holdCorrect) continueRef.current?.focus()
@@ -113,10 +119,10 @@ export function LearnQuestionView({
   // Correct answers move on by themselves.
   useEffect(() => {
     if (feedback?.kind !== 'correct' || holdCorrect) return
-    const t = setTimeout(() => onDone({ correct: true, firstTry: !peeked }), AUTO_ADVANCE_MS)
+    const t = setTimeout(() => onDone({ correct: true, firstTry: !peeked }), advanceMs)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedback])
+  }, [feedback, holdCorrect])
 
   const finishWrong = () => onDone({ correct: false, firstTry: false })
   const overrideCorrect = () => onDone({ correct: true, firstTry: true })
@@ -224,6 +230,35 @@ export function LearnQuestionView({
         </dd>
       </div>
     </dl>
+  )
+
+  /** What Ask AI is told about this question; `given` is what the student answered. */
+  const askQuestion = (given: string, extra: Partial<InsightQuestion> = {}): InsightQuestion => ({
+    cardId: card.id,
+    questionType: q.type,
+    promptSide,
+    prompt,
+    answerSide: q.answerSide,
+    correctAnswer: answer,
+    userAnswer: given,
+    shown: q.type === 'tf' ? q.shown?.text : undefined,
+    ...extra,
+  })
+  const givenAnswer =
+    q.type === 'mc' ? (q.choices?.[picked ?? -1]?.text ?? '') : q.type === 'tf' ? (tfPicked ? 'True' : 'False') : response
+  const continueCorrect = (
+    <div className="row">
+      <span className="spacer" />
+      <button
+        ref={continueRef}
+        type="button"
+        className="btn btn-primary"
+        onClick={() => onDone({ correct: true, firstTry: !peeked })}
+        data-testid="learn-continue"
+      >
+        Continue <kbd>Enter</kbd>
+      </button>
+    </div>
   )
 
   const promptBlock = (
@@ -360,6 +395,7 @@ export function LearnQuestionView({
                   {answer}
                 </p>
               </div>
+              <AiInsight question={askQuestion('')} askOnly />
               <div className={styles.tf}>
                 <button type="button" className={`${styles.choice} ${styles.learning}`} onClick={() => selfGrade(false)}>
                   <kbd>1</kbd>
@@ -378,6 +414,25 @@ export function LearnQuestionView({
       {feedback?.kind === 'correct' && !holdCorrect && (
         <div className={`${styles.feedback} ${styles.good}`} role="status">
           <Check size={20} /> {feedback.text ?? 'Correct!'}
+          {aiAvailable && (
+            <>
+              <span className="spacer" />
+              <button type="button" className="btn btn-soft btn-sm" onClick={() => setAsking(true)} data-testid="learn-ask-ai">
+                <MessagesSquare size={16} aria-hidden />
+                Ask AI
+              </button>
+              <span className={styles.countdown} style={{ animationDuration: `${advanceMs}ms` }} aria-hidden />
+            </>
+          )}
+        </div>
+      )}
+      {asking && !wrongCard && !nearMiss && feedback?.kind === 'correct' && (
+        <div className={`${styles.feedback} ${styles.goodDetail}`} role="status" data-testid="learn-correct-chat">
+          <div className={`${styles.feedbackHead} ${styles.feedbackHeadGood}`}>
+            <Check size={20} /> {feedback.text ?? 'Correct!'}
+          </div>
+          <AiInsight question={askQuestion(givenAnswer, { correct: true })} askOnly startInChat />
+          {continueCorrect}
         </div>
       )}
       {holdCorrect && wrongCard && (
@@ -386,18 +441,12 @@ export function LearnQuestionView({
             <Check size={20} /> {feedback.text ?? 'Correct! These don’t match.'}
           </div>
           {tfPairs}
-          <div className="row">
-            <span className="spacer" />
-            <button
-              ref={continueRef}
-              type="button"
-              className="btn btn-primary"
-              onClick={() => onDone({ correct: true, firstTry: !peeked })}
-              data-testid="learn-continue"
-            >
-              Continue <kbd>Enter</kbd>
-            </button>
-          </div>
+          <AiInsight
+            question={askQuestion(givenAnswer, { correct: true, userAnswerMeaning: sideText(wrongCard, promptSide) })}
+            askOnly
+            startInChat={asking}
+          />
+          {continueCorrect}
         </div>
       )}
       {nearMiss && (

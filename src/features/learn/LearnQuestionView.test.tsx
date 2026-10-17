@@ -5,7 +5,14 @@ import type { Card } from '../../types'
 import { LearnQuestionView } from './LearnQuestionView'
 
 // The AI helpers need auth and the study-set context; they're covered on their own.
-vi.mock('../study/AiInsight', () => ({ AiHint: () => null, AiInsight: () => null }))
+const ai = vi.hoisted(() => ({ available: false }))
+vi.mock('../study/AiInsight', () => ({
+  AiHint: () => null,
+  AiInsight: ({ askOnly, question }: { askOnly?: boolean; question: { userAnswer: string } }) => (
+    <div data-testid={askOnly ? 'ask-only' : 'insight'}>{question.userAnswer}</div>
+  ),
+  useAiAvailable: () => ai.available,
+}))
 vi.mock('../../components/StudyButtons', () => ({ AudioButton: () => null, CardImage: () => null, StarButton: () => null }))
 
 const card = (id: string, term: string, definition: string): Card => ({ id, term, definition, order: 0, starred: false })
@@ -121,6 +128,62 @@ describe('LearnQuestionView near-miss written answers', () => {
     type('Photosynthesis')
     expect(screen.queryByTestId('learn-near-miss')).toBeNull()
     act(() => vi.advanceTimersByTime(1000))
+    expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
+  })
+})
+
+describe('LearnQuestionView Ask AI after a correct answer', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    ai.available = false
+  })
+
+  const mcCorrect = () => {
+    vi.useFakeTimers()
+    const view = renderView(
+      {
+        qid: 3,
+        cardId: asked.id,
+        type: 'mc',
+        answerSide: 'term',
+        choices: [
+          { cardId: asked.id, text: asked.term },
+          { cardId: other.id, text: other.term },
+        ],
+        correctIndex: 0,
+      },
+      asked,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Digital-physical tensions/ }))
+    return view
+  }
+
+  it('without AI, moves on after 0.9 s with no Ask AI button', () => {
+    const { onDone } = mcCorrect()
+    expect(screen.queryByTestId('learn-ask-ai')).toBeNull()
+    act(() => vi.advanceTimersByTime(1000))
+    expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
+  })
+
+  it('with AI, offers Ask AI and waits 2 s before moving on', () => {
+    ai.available = true
+    const { onDone } = mcCorrect()
+    expect(screen.getByTestId('learn-ask-ai')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(1500))
+    expect(onDone).not.toHaveBeenCalled()
+    act(() => vi.advanceTimersByTime(600))
+    expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
+  })
+
+  it('pressing Ask AI stops the countdown and opens the chat with Continue', () => {
+    ai.available = true
+    const { onDone } = mcCorrect()
+    fireEvent.click(screen.getByTestId('learn-ask-ai'))
+    const box = screen.getByTestId('learn-correct-chat')
+    expect(within(box).getByTestId('ask-only')).toHaveTextContent('Digital-physical tensions')
+    act(() => vi.advanceTimersByTime(10_000))
+    expect(onDone).not.toHaveBeenCalled()
+    fireEvent.click(within(box).getByTestId('learn-continue'))
     expect(onDone).toHaveBeenCalledWith({ correct: true, firstTry: true })
   })
 })
