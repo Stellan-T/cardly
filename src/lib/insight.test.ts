@@ -53,6 +53,11 @@ describe('buildInsightPrompt', () => {
     expect(text).toContain('The app accepted this answer as correct (small typo ignored), but it is not the exact wording.')
   })
 
+  it('says when the answer was right, or when none was given', () => {
+    expect(buildInsightPrompt({ ...base, userAnswer: 'pregnant', correct: true })).toContain("The student's answer was correct.")
+    expect(buildInsightPrompt({ ...base, userAnswer: '' })).toContain("Student's answer: none (they looked at the answer)")
+  })
+
   it('caps very long card text', () => {
     const text = buildInsightPrompt({ ...base, correctAnswer: 'x'.repeat(5000) })
     expect(text.length).toBeLessThan(2500)

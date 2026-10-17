@@ -69,10 +69,12 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
   const sideName = SIDE_NAME[q.answerSide]
   const correctText = sideText(q.card, q.answerSide)
   const wrongCard = answered ? wrongAnswerCard(q, answered, cards) : undefined
-  // AI help after a wrong answer, or a written one accepted with slightly different wording.
+  // AI help after every answer: Ask AI always, AI Insight when there's a mistake to explain
+  // (a wrong answer, or a written one accepted with slightly different wording).
   const nearMiss = !!answered?.correct && q.kind === 'written' && !!answered.reason && NEAR_MISS_REASONS.has(answered.reason)
-  const aiHelp = answered && (!answered.correct || nearMiss) && answered.reason !== 'empty' && (
+  const aiHelp = answered && (
     <AiInsight
+      askOnly={(answered.correct && !nearMiss) || answered.reason === 'empty'}
       question={{
         cardId: q.card.id,
         questionType: q.kind,
@@ -85,6 +87,7 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
         userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
         shown: q.kind === 'tf' ? q.shown.text : undefined,
         accepted: nearMiss ? answered.reason : undefined,
+        correct: answered.correct,
       }}
     />
   )

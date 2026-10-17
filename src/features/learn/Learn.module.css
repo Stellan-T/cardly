@@ -162,6 +162,8 @@
   }
 }
 .good {
+  position: relative;
+  overflow: hidden;
   flex-direction: row;
   align-items: center;
   font-weight: 700;
@@ -178,6 +180,27 @@
   gap: 8px;
   font-weight: 700;
   color: var(--danger-text);
+}
+/* Time left before a correct answer moves on (while "Ask AI" is on offer). */
+.countdown {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: color-mix(in srgb, var(--success) 45%, transparent);
+  transform-origin: left;
+  animation: countdown linear forwards;
+}
+@keyframes countdown {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .countdown {
+    display: none;
+  }
 }
 .feedbackHeadGood {
   color: var(--success-text);
