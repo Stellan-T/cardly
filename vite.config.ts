@@ -62,6 +62,8 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            // AI Logic and App Check load only when someone asks for an AI Insight.
+            if (/node_modules\/(@firebase\/(ai|app-check)|firebase\/(ai|app-check))\//.test(id)) return 'firebase-ai'
             if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) return 'firebase'
             if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'react'
             return undefined

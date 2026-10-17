@@ -8,6 +8,7 @@ import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../
 import { ttsSupported } from '../../lib/tts'
 import type { Card, GradingLevel, Side } from '../../types'
 import type { ImageSource } from '../../data/images'
+import { AiInsight } from '../study/AiInsight'
 import styles from './Learn.module.css'
 
 export interface Verdict {
@@ -346,6 +347,21 @@ export function LearnQuestionView({
               {answer}
             </span>
           </div>
+          {feedback.response !== undefined && (
+            <AiInsight
+              question={{
+                cardId: card.id,
+                questionType: q.type,
+                promptSide,
+                prompt,
+                answerSide: q.answerSide,
+                correctAnswer: answer,
+                userAnswer: feedback.response,
+                userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
+                shown: q.type === 'tf' ? q.shown?.text : undefined,
+              }}
+            />
+          )}
           {retype && feedback.written && (
             <div className="field">
               <label htmlFor={`retype-${q.qid}`} className="small">

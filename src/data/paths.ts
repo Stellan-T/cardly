@@ -14,6 +14,7 @@ export const folderRef = (uid: string, folderId: string) => doc(db, 'users', uid
 export const testsCol = (uid: string) => collection(db, 'users', uid, 'tests')
 export const imagesCol = (uid: string) => collection(db, 'users', uid, 'images')
 export const imageRef = (uid: string, imageId: string) => doc(db, 'users', uid, 'images', imageId)
+export const insightRef = (uid: string, key: string) => doc(db, 'users', uid, 'insights', key)
 export const publicSetRef = (setId: string) => doc(db, 'publicSets', setId)
 export const publicImageRef = (setId: string, imageId: string) => doc(db, 'publicSets', setId, 'images', imageId)
 export const leaderboardCol = (setId: string) => collection(db, 'leaderboards', setId, 'match')
