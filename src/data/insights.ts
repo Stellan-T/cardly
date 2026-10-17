@@ -1,17 +1,19 @@
 /**
  * AI Insight explanations and AI Hints: cached per user in
  * users/{uid}/insights/{key} and generated with Gemini (Firebase AI Logic) on
- * a cache miss.
+ * a cache miss. Ask AI follow-up questions are a live chat and not stored.
  */
 import { getDoc, setDoc } from 'firebase/firestore'
 import { AI_MODEL } from '../config/app'
 import type { AiTask } from '../firebase/ai'
 import {
+  buildChatTurns,
   buildHintPrompt,
   buildInsightPrompt,
   hintKey,
   insightKey,
   maskAnswer,
+  type ChatTurn,
   type HintRequest,
   type InsightRequest,
 } from '../lib/insight'
@@ -115,4 +117,35 @@ export async function hintForCard(uid: string, req: HintRequest, onText: (text: 
     clean: (text) => maskAnswer(text, req.answer),
   }
   return cachedOrStreamed(job, onText, signal)
+}
+
+/**
+ * Answers a follow-up question about a wrong answer. `turns` holds the
+ * conversation so far and ends with the new question; `insight` is the AI
+ * Insight shown before it, if any. Streams like the functions above.
+ */
+export async function askFollowUp(
+  req: InsightRequest,
+  insight: string | null,
+  turns: readonly ChatTurn[],
+  onText: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  const contents = buildChatTurns(req, insight, turns).map((t) => ({ role: t.role, parts: [{ type: 'text' as const, text: t.text }] }))
+  let text = ''
+  try {
+    const { geminiModel } = await import('../firebase/ai')
+    const { stream } = await geminiModel('chat').generateContentStream({ contents }, { signal })
+    for await (const chunk of stream) {
+      text += chunk.text()
+      onText(text)
+    }
+  } catch (err) {
+    if (signal?.aborted) throw err
+    console.error('AI chat failed', err)
+    throw new InsightError(classify(err), err)
+  }
+  text = text.trim()
+  if (!text) throw new InsightError('failed')
+  return text
 }

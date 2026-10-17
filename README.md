@@ -153,17 +153,20 @@ The build reads the Firebase config from the committed `.env`, so no secrets are
 to keep the config out of the repository, empty the values in `.env` and add repository secrets with
 the same names under **Settings → Secrets and variables → Actions**; secrets override `.env`.)
 
-### 1.8 Optional: turn on AI Insight and AI Hint (Gemini)
+### 1.8 Optional: turn on AI Insight, Ask AI and AI Hint (Gemini)
 
 - **AI Insight:** after a wrong answer in Learn, and for every missed question on the Test results
   page, Gemini explains why the answer was wrong, why the correct answer is right and how the two
   differ.
+- **Ask AI:** next to AI Insight (in Learn, Test results and Blocks), a short chat about that
+  question: ask things like "So if X, then Y? Or am I getting it wrong?" and Gemini answers with
+  the card in mind. Up to 10 questions per answer; conversations aren't stored.
 - **AI Hint:** before you answer in Learn, or before you flip a card in Flashcards, Gemini gives a
   hint (an example sentence with a blank, a context or a memory hook) without revealing the answer.
   Any word of the answer that slips into the hint is replaced with `___`. In Learn, a correct answer
   after a hint doesn't count as a first-try answer. Tests have no hints.
 
-Both use **Firebase AI Logic** with the **Gemini Developer API**, which has a free tier on the Spark
+All three use **Firebase AI Logic** with the **Gemini Developer API**, which has a free tier on the Spark
 plan. The buttons stay hidden until `VITE_RECAPTCHA_SITE_KEY` is set.
 
 1. **Firebase console → AI Services → AI Logic → Get started** and choose the **Gemini Developer

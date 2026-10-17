@@ -2,10 +2,11 @@ import { useId, useState, type RefObject } from 'react'
 import { Check, RefreshCw, X } from '../../components/icons'
 import { AudioButton, CardImage } from '../../components/StudyButtons'
 import type { ImageSource } from '../../data/images'
-import { GRADE_REASON_TEXT, type GradeReason } from '../../lib/grade'
+import { GRADE_REASON_TEXT, NEAR_MISS_REASONS, type GradeReason } from '../../lib/grade'
 import { cardForAnswer, meaningLabel, otherCard, otherSide, sideText } from '../../lib/questions'
 import type { Card, Side } from '../../types'
 import { useStudySet } from '../sets/StudySetContext'
+import { AiInsight } from '../study/AiInsight'
 import { useSpeech } from '../study/hooks'
 import { exactish, type BlocksQuestion } from './questions'
 import styles from './BlocksPage.module.css'
@@ -68,6 +69,25 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
   const sideName = SIDE_NAME[q.answerSide]
   const correctText = sideText(q.card, q.answerSide)
   const wrongCard = answered ? wrongAnswerCard(q, answered, cards) : undefined
+  // AI help after a wrong answer, or a written one accepted with slightly different wording.
+  const nearMiss = !!answered?.correct && q.kind === 'written' && !!answered.reason && NEAR_MISS_REASONS.has(answered.reason)
+  const aiHelp = answered && (!answered.correct || nearMiss) && answered.reason !== 'empty' && (
+    <AiInsight
+      question={{
+        cardId: q.card.id,
+        questionType: q.kind,
+        promptSide,
+        prompt: q.prompt,
+        answerSide: q.answerSide,
+        correctAnswer: correctText,
+        userAnswer:
+          q.kind === 'mc' ? (q.choices[answered.choice ?? -1]?.text ?? '') : q.kind === 'tf' ? (answered.tf ? 'True' : 'False') : (answered.text ?? ''),
+        userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
+        shown: q.kind === 'tf' ? q.shown.text : undefined,
+        accepted: nearMiss ? answered.reason : undefined,
+      }}
+    />
+  )
 
   let body
   if (q.kind === 'mc') {
@@ -202,6 +222,7 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
           </div>
         </div>
       )}
+      {answered?.correct && aiHelp}
       {answered && !answered.correct && (
         <>
           <div className="alert alert-danger">
@@ -222,6 +243,7 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
               )}
             </div>
           </div>
+          {aiHelp}
           <div className="row">
             <button type="button" className="btn btn-primary" onClick={onNext} autoFocus>
               Next question

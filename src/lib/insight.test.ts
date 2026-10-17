@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { buildHintPrompt, buildInsightPrompt, hintKey, insightKey, maskAnswer, type HintRequest, type InsightRequest } from './insight'
+import {
+  buildChatTurns,
+  buildHintPrompt,
+  buildInsightPrompt,
+  hintKey,
+  insightKey,
+  maskAnswer,
+  type HintRequest,
+  type InsightRequest,
+} from './insight'
 
 const base: InsightRequest = {
   setId: 's1',
@@ -119,5 +128,27 @@ describe('hintKey', () => {
   it('never collides with an insight key for the same card', async () => {
     const insight = await insightKey({ ...base, userAnswer: '' })
     expect(await hintKey({ ...hint, prompt: base.prompt, answer: base.correctAnswer, answerSide: base.answerSide })).not.toBe(insight)
+  })
+})
+
+describe('buildChatTurns', () => {
+  it('starts from the card and the AI Insight already shown', () => {
+    const turns = buildChatTurns(base, 'Embarazada means pregnant.', [{ role: 'user', text: 'So it is a false friend?' }])
+    expect(turns.map((t) => t.role)).toEqual(['user', 'model', 'user'])
+    expect(turns[0].text).toContain('<card>')
+    expect(turns[0].text).toContain('Explain my mistake.')
+    expect(turns[1].text).toBe('Embarazada means pregnant.')
+    expect(turns[2].text).toBe('So it is a false friend?')
+  })
+
+  it('puts the card in front of the first question when there is no Insight', () => {
+    const turns = buildChatTurns(base, null, [
+      { role: 'user', text: 'Why not embarrassed?' },
+      { role: 'model', text: 'Because…' },
+      { role: 'user', text: 'And avergonzada?' },
+    ])
+    expect(turns.map((t) => t.role)).toEqual(['user', 'model', 'user'])
+    expect(turns[0].text).toMatch(/^<card>[\s\S]*<\/card>\n\nMy question: Why not embarrassed\?$/)
+    expect(turns[2].text).toBe('And avergonzada?')
   })
 })
