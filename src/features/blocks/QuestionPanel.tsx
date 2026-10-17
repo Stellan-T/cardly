@@ -23,15 +23,18 @@ export interface Answered {
 
 const SIDE_NAME: Record<Side, string> = { term: 'term', definition: 'definition' }
 
-/** The card a wrong answer actually belongs to, so the feedback can say what it means. */
+/**
+ * The card a wrong answer actually belongs to, so the feedback can say what it means.
+ * A false true/false pairing always gets one, right or wrong: the shown side is another card's.
+ */
 export function wrongAnswerCard(q: BlocksQuestion, a: Answered, pool: readonly Card[]): Card | undefined {
+  if (q.kind === 'tf') return !q.isTrue ? otherCard(pool, q.shown.cardId, q.card.id) : undefined
   if (a.correct) return undefined
   if (q.kind === 'mc') return otherCard(pool, q.choices[a.choice ?? -1]?.cardId, q.card.id)
-  if (q.kind === 'tf') return !q.isTrue && a.tf ? otherCard(pool, q.shown.cardId, q.card.id) : undefined
   return cardForAnswer(a.text ?? '', q.answerSide, pool, q.card.id)
 }
 
-/** "Your answer means …" / "That means …" for a wrong answer, or '' when it isn't another card's. */
+/** "Your answer means …" / "That means …" for a wrong answer or false pairing, or '' when it isn't another card's. */
 export function meaningSentence(q: BlocksQuestion, a: Answered, pool: readonly Card[]): string {
   const other = wrongAnswerCard(q, a, pool)
   if (!other) return ''
@@ -189,6 +192,11 @@ export function QuestionPanel({ question: q, answered, imageSource, panelRef, in
             {!exactish(answered.reason) && (
               <div>
                 Answer: <span lang={langAttr(answerLang)}>{correctText}</span>
+              </div>
+            )}
+            {wrongCard && (
+              <div data-testid="blocks-meaning">
+                {meaningLabel(q.answerSide, 'That')} <span lang={langAttr(promptLang)}>{sideText(wrongCard, promptSide)}</span>.
               </div>
             )}
           </div>

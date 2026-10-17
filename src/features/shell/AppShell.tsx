@@ -4,6 +4,7 @@ import { Dialog } from '../../components/Dialog'
 import {
   FileText,
   FolderPlus,
+  Heart,
   House,
   Keyboard,
   Library,
@@ -23,8 +24,9 @@ import { toast } from '../../components/toast'
 import { APP_NAME } from '../../config/app'
 import { createFolder } from '../../data/folders'
 import { updateSettings } from '../../data/user'
+import type { ThemePref } from '../../types'
 import { AuthPanel } from '../auth/AuthPanel'
-import { setThemePreference, useAuth } from '../auth/AuthProvider'
+import { logoSrc, setThemePreference, useAuth } from '../auth/AuthProvider'
 import { signOut } from '../auth/actions'
 import { SyncIndicator } from './SyncIndicator'
 
@@ -65,7 +67,7 @@ export function AppShell() {
     }
   }
 
-  const setTheme = (theme: 'light' | 'dark' | 'system') => {
+  const setTheme = (theme: ThemePref) => {
     setThemePreference(theme)
     if (uid) updateSettings(uid, { theme })
   }
@@ -77,7 +79,7 @@ export function AppShell() {
       <header className="topbar">
         <div className="container topbar-inner">
           <Link to="/" className="brand" aria-label={`${APP_NAME} home`}>
-            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={30} height={30} />
+            <img src={logoSrc()} alt="" width={30} height={30} />
             <span>{APP_NAME}</span>
           </Link>
           <nav className="topnav" aria-label="Main">
@@ -142,6 +144,7 @@ export function AppShell() {
                 icon: <Monitor size={18} />,
                 onSelect: () => setTheme('system'),
               },
+              { label: `Pink${settings.theme === 'pink' ? ' ✓' : ''}`, icon: <Heart size={18} />, onSelect: () => setTheme('pink') },
               'separator',
               {
                 label: 'Sign out',

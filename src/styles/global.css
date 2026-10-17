@@ -82,6 +82,28 @@
   --shadow-3: 0 18px 48px rgb(0 0 0 / 50%);
 }
 
+/* Pink: the light theme with pink where it has green, on a light pink background. */
+:root[data-theme='pink'] {
+  --bg: #fcf0f4;
+  --surface-2: #f9e4ec;
+  --surface-3: #f2d6e1;
+  --border: #ecc8d6;
+  --border-strong: #d8a3b8;
+  --text: #2a1e23;
+  --text-muted: #6a5960;
+  --text-subtle: #76646c;
+  --primary: #c42a6c;
+  --primary-hover: #a31f58;
+  --primary-soft: #fbdbe8;
+  --primary-soft-text: #8e1c4d;
+  --success: #a8288f;
+  --success-soft: #f6dcf0;
+  --success-text: #7f1c6c;
+  --shadow-1: 0 1px 2px rgb(42 30 35 / 6%), 0 1px 3px rgb(42 30 35 / 8%);
+  --shadow-2: 0 4px 12px rgb(42 30 35 / 10%), 0 2px 4px rgb(42 30 35 / 6%);
+  --shadow-3: 0 18px 48px rgb(42 30 35 / 18%);
+}
+
 /* ==========================================================================
    Base
    ========================================================================== */

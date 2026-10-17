@@ -34,6 +34,7 @@ export {
   Funnel,
   Globe,
   GripVertical,
+  Heart,
   House,
   Image,
   Info,

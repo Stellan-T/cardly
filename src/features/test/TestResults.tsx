@@ -155,17 +155,19 @@ function ReviewItem({
       : r.response
   const expected = q.type === 'matching' ? `${q.correctLetter}. ${r.expected}` : r.expected
   // The card a wrong answer actually belongs to, so the review can say what it means.
-  const wrongCard =
-    r.correct || !r.answered
-      ? undefined
-      : q.type === 'mc'
-        ? otherCard(cards, q.choices.find((c) => c.text === r.response)?.cardId, q.cardId)
-        : q.type === 'matching'
-          ? otherCard(cards, q.options.find((o) => o.letter === r.letter)?.cardId, q.cardId)
-          : q.type === 'tf'
-            ? q.isTrue
-              ? undefined
-              : otherCard(cards, q.shown.cardId, q.cardId)
+  // A false true/false pairing always gets one, right or wrong: the shown side is another card's.
+  const wrongCard = !r.answered
+    ? undefined
+    : q.type === 'tf'
+      ? q.isTrue
+        ? undefined
+        : otherCard(cards, q.shown.cardId, q.cardId)
+      : r.correct
+        ? undefined
+        : q.type === 'mc'
+          ? otherCard(cards, q.choices.find((c) => c.text === r.response)?.cardId, q.cardId)
+          : q.type === 'matching'
+            ? otherCard(cards, q.options.find((o) => o.letter === r.letter)?.cardId, q.cardId)
             : cardForAnswer(r.response, q.answerSide, cards, q.cardId)
 
   return (
