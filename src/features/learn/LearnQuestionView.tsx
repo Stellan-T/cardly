@@ -534,21 +534,13 @@ export function LearnQuestionView({
               </div>
             </>
           )}
-          {feedback.response !== undefined && (
-            <AiInsight
-              question={{
-                cardId: card.id,
-                questionType: q.type,
-                promptSide,
-                prompt,
-                answerSide: q.answerSide,
-                correctAnswer: answer,
-                userAnswer: feedback.response,
-                userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
-                shown: q.type === 'tf' ? q.shown?.text : undefined,
-              }}
-            />
-          )}
+          {/* "Don't know?" leaves no answer to explain, but Ask AI is still there. */}
+          <AiInsight
+            question={askQuestion(feedback.response ?? '', {
+              userAnswerMeaning: wrongCard ? sideText(wrongCard, promptSide) : undefined,
+            })}
+            askOnly={feedback.response === undefined}
+          />
           {retype && feedback.written && (
             <div className="field">
               <label htmlFor={`retype-${q.qid}`} className="small">
